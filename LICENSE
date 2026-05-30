@@ -1,21 +1,50 @@
-MIT License
+# Licencia de Uso - Portafolio Personal
 
-Copyright (c) 2026 Israel Oyhenart
+## © 2026 Israel Alfredo Oyhenart - Video Analyst Portfolio
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+### Dual Licensing
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Este repositorio tiene **dos tipos de licencia**:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+#### 1. Código de Scripts (archivos `.py`, `.ipynb`, etc.)
+Licenciado bajo **MIT License** - Podés usarlo, modificarlo y distribuirlo con fines educativos.
+
+#### 2. Contenido Específico del Club (datos, análisis, README)
+**NO COMERCIAL** - Requiere permiso por escrito para uso comercial.
+
+---
+
+## Términos Completos
+
+### ✅ Lo que PODÉS hacer:
+- Copiar y revisar el código con fines **educativos**
+- Aprender de las metodologías mostradas
+- Usar scripts genéricos en tus propios proyectos (con atribución)
+- Contactarme para oportunidades laborales o colaboraciones
+
+### ❌ Lo que NO PODÉS hacer:
+- Usar el contenido para **fines comerciales** sin permiso
+- Revender, monetizar o distribuir el contenido del club
+- Identificar o hacer contacto con jugadores menores del club
+- Usar tácticas/datos específicos contra Estrella de Berisso en competencias
+- Remover este aviso de licencia
+
+### 🏢 Propiedad del Club
+
+El análisis deportivo, datos de partidos, y metodologías específicas fueron creadas para **Estrella de Berisso** (La Plata, Argentina) y pertenecen al club.
+
+Este repositorio se muestra únicamente como **portafolio profesional** para demostrar mis habilidades como video analista.
+
+### 📧 Contactar para Permisos
+
+Si querés usar este contenido comercialmente o tenés consultas:
+- **LinkedIn**: https://www.linkedin.com/in/israel-oyhenart/
+
+### 🔄 Responsabilidad
+
+Este contenido se proporciona "tal cual", sin garantías de ningún tipo. El autor no es responsable por uso indebido del contenido por terceros.
+
+---
+
+*Este documento fue creado para proteger tanto al autor como al club propietario del contenido.*
+*Última actualización: mayo 2026*
