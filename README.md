@@ -66,10 +66,10 @@ Trabajo desarrollado para las **divisiones juveniles** del club. Los datos fuero
 - ## Visualizaciones
 
 ### Juveniles — 7ma
-![Red de pases 7ma](juveniles/outputs/visualizaciones/red_de_pases.png)
+![Red de pases 7ma](juveniles/outputs/visualizaciones/red%20de%20pases.png)
 
 ### Juveniles — 8va
-![Dashboard 8va](juveniles/outputs/visualizaciones/riesgo_en_salida.png)
+![Dashboard 8va](juveniles/outputs/visualizaciones/riesgo%20en%20salida.png)
 
 ---
 
