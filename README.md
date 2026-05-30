@@ -92,6 +92,15 @@ Video (LongoMatch) → Carga manual FCPython → Python ETL → Visualizaciones 
 
 ---
 
+## Experiencia
+- **Estrella de Berisso**
+  - Video Analyst en juveniles 
+  - Ascendido a **Primera** - Torneo Promocional Amateur
+  - Análisis de rendimiento, táctica y scouting
+
+## 🔒 Confidencialidad
+El trabajo detallado con datos reales se mantiene privado por protección de menores y propiedad intelectual del club. **Solicita acceso a ejemplos completos por LinkedIn.**
+
 ## 🛠️ Tech Stack
 
 ### Datos y procesamiento
