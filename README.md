@@ -57,8 +57,7 @@ Trabajo desarrollado para las **divisiones juveniles** del club. Los datos fuero
 
 | Notebook | Descripción |
 |---|---|
-| `7ma.ipynb` | Mapas de calor por jugador y zonas de influencia colectiva |
-| `7ma.ipynb` | Redes de pases y circuitos de juego |
+| `7ma.ipynb` | Mapas de calor y redes de pases |
 | `8va.ipynb` | Dashboard integrado de rendimiento por partido |
 
 ### Fuente de datos
