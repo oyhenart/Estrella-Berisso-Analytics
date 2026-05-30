@@ -109,7 +109,7 @@ Video (LongoMatch) → Carga manual FCPython → Python ETL → Visualizaciones 
 
 ## 🔄 Próximos pasos
 
-- [ ] Subir notebooks y outputs de juveniles
+- [x] Subir notebooks y outputs de juveniles
 - [ ] Primer pipeline completo del Torneo Promocional
 - [ ] Template de reporte HTML post-partido con clips embebidos
 - [ ] Automatización de reportes semanales vía n8n
