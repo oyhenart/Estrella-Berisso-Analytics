@@ -26,9 +26,8 @@ Estrella-Berisso-Analytics/
 │   │   ├── raw/                      # Datasets originales de FCPython (.xlsx)
 │   │   └── cleaned/                  # Datos procesados y normalizados
 │   ├── notebooks/
-│   │   ├── heatmaps.ipynb
-│   │   ├── mapas_pases.ipynb
-│   │   └── reportes_dashboard.ipynb
+│   │   ├── 7ma.ipynb
+│   │   ├── 8va.ipynb
 │   └── outputs/                      # Visualizaciones generadas
 │
 └── torneo_promocional/               # 🔄 En desarrollo
@@ -36,10 +35,8 @@ Estrella-Berisso-Analytics/
     │   ├── raw/                      # Datos crudos por partido
     │   └── cleaned/                  # Datos procesados
     ├── notebooks/
-    │   ├── 00_carga_datos.ipynb
-    │   ├── 01_analisis_tactico.ipynb
-    │   ├── 02_scouting_rivales.ipynb
-    │   └── 03_reporte_partido.ipynb
+    │   ├── vs-metalurgico.ipynb
+    │   ├── vs-atlpilar.ipynb
     ├── src/
     │   ├── parser_fcpython.py        # Procesamiento de datos FCPython
     │   └── viz_utils.py              # Funciones reutilizables de visualización
@@ -60,12 +57,12 @@ Trabajo desarrollado para las **divisiones juveniles** del club. Los datos fuero
 
 | Notebook | Descripción |
 |---|---|
-| `heatmaps.ipynb` | Mapas de calor por jugador y zonas de influencia colectiva |
-| `mapas_pases.ipynb` | Redes de pases y circuitos de juego |
-| `reportes_dashboard.ipynb` | Dashboard integrado de rendimiento por partido |
+| `8va.ipynb` | Mapas de calor por jugador y zonas de influencia colectiva |
+| `8va.ipynb` | Redes de pases y circuitos de juego |
+| `7ma.ipynb` | Dashboard integrado de rendimiento por partido |
 
 ### Fuente de datos
-- **FCPython** — datasets descargados en formato `.xlsx`
+- **FCPython** — datasets descargados en formato `.csv`
 
 ---
 
