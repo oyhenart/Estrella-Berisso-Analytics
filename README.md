@@ -63,6 +63,14 @@ Trabajo desarrollado para las **divisiones juveniles** del club. Los datos fuero
 ### Fuente de datos
 - **FCPython** — datasets descargados en formato `.csv`
 
+- ## Visualizaciones
+
+### Juveniles — 7ma
+![Red de pases 7ma](juveniles/outputs/visualizaciones/red_de_pases.png)
+
+### Juveniles — 8va
+![Dashboard 8va](juveniles/outputs/visualizaciones/riesgo_en_salida.png)
+
 ---
 
 ## 📁 Fase 2 — Torneo Promocional Amateur
