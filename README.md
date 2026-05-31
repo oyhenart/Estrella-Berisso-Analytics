@@ -1,4 +1,4 @@
-# ⚽ Estrella de Berisso — Football Analytics
+# Estrella de Berisso 
 
 **Analista de Datos y Rendimiento | Israel Oyhenart**  
 *Documentación del trabajo analítico realizado en el Club Atlético Estrella de Berisso*
@@ -8,7 +8,20 @@
 
 ---
 
-## 📋 Sobre este repositorio
+## ⚠️ Aviso legal y de privacidad
+
+Este repositorio es de **carácter público** con fines de documentación profesional y desarrollo analítico. Se aplican las siguientes condiciones:
+
+- Los **datos de jugadores son anonimizados** o utilizados con consentimiento expreso del Club Atlético Estrella de Berisso y sus integrantes.
+- Este repositorio **no contiene información personal sensible** (DNI, datos de salud, domicilios, ni información financiera de ningún jugador o integrante del club).
+- Los nombres que puedan aparecer en los datasets corresponden a **apodos o nombres de pila de uso interno** acordados con el club para fines analíticos.
+- El **Club Atlético Estrella de Berisso** mantiene la propiedad institucional de los datos generados en contexto oficial. Este repositorio documenta el trabajo técnico y metodológico del analista.
+- Queda prohibida la **reutilización comercial** de los datos, visualizaciones o reportes sin autorización expresa del club y del autor.
+- El código fuente (scripts de Python, dashboards) se publica bajo licencia **MIT** y puede ser reutilizado libremente con atribución.
+
+---
+
+## Sobre este repositorio
 
 Este repositorio documenta mi trabajo como **Analista de Datos y Video Analista** en el Club Atlético Estrella de Berisso, comenzando en las divisiones juveniles y con proyección al primer equipo en el **Torneo Promocional Amateur**.
 
@@ -16,119 +29,91 @@ El enfoque no es solo analizar lo que sucede en el campo, sino construir **siste
 
 ---
 
-## 🗂️ Estructura del repositorio
+## Estructura del repositorio
 
 ```
 Estrella-Berisso-Analytics/
-│
-├── juveniles/                        # ✅ Trabajo finalizado
-│   ├── data/
-│   │   ├── raw/                      # Datasets originales de FCPython (.xlsx)
-│   │   └── cleaned/                  # Datos procesados y normalizados
-│   ├── notebooks/
-│   │   ├── 7ma.ipynb
-│   │   ├── 8va.ipynb
-│   └── outputs/                      # Visualizaciones generadas
 │
 └── torneo_promocional/               # 🔄 En desarrollo
     ├── data/
     │   ├── raw/                      # Datos crudos por partido
     │   └── cleaned/                  # Datos procesados
-    ├── notebooks/
-    │   ├── vs-metalurgico.ipynb
-    │   ├── vs-atlpilar.ipynb
-    ├── src/
-    │   ├── parser_fcpython.py        # Procesamiento de datos FCPython
-    │   └── viz_utils.py              # Funciones reutilizables de visualización
-    ├── outputs/
-    │   ├── visualizaciones/
-    │   └── reportes/                 # Reportes HTML por partido
-    └── workflow/                     # Automatizaciones n8n
+    ├── dashboard/                    # 🆕 Dashboard interactivo (Streamlit)
+    │   ├── app.py                    # Punto de entrada
+    │   ├── pages/
+    │   │   ├── 1_Estadisticas.py
+    │   │   └── 2_Mapa_Cancha.py
+    │   └── data/
+    │       └── events_clean.csv
 ```
 
 ---
 
-## 📁 Fase 1 — Juveniles
+## Torneo Promocional Amateur
 
 ### Contexto
-Trabajo desarrollado para las **divisiones juveniles** del club. Los datos fueron obtenidos desde [FCPython](https://fcpython.com/) y procesados con Python.
 
-### Análisis desarrollados
-
-| Notebook | Descripción |
-|---|---|
-| `7ma.ipynb` | Mapas de calor y redes de pases |
-| `8va.ipynb` | Dashboard integrado de rendimiento por partido |
-
-### Fuente de datos
-- **FCPython** — datasets descargados en formato `.csv`
-
-- ## Visualizaciones
-
-### Juveniles — 7ma
-![Red de pases 7ma](visualizaciones/red%20de%20pases.png)
-
-### Juveniles — 8va
-![Dashboard 8va](visualizaciones/precision%20vs%20recuperacion.png)
-
----
-
-## 📁 Fase 2 — Torneo Promocional Amateur
-
-### Contexto
-Pipeline de datos completo para el seguimiento del primer equipo en el **Torneo Promocional Amateur**. La fuente principal de datos es el **video** (partidos locales filmados + transmisiones de visitante), registrado y codificado con **LongoMatch** y volcado manualmente a FCPython.
+Pipeline de datos completo para el seguimiento del primer equipo en el **Torneo Promocional Amateur**. La fuente principal de datos es el **video** (partidos locales filmados + transmisiones de visitante), registrado y codificado con **LongoMatch** y volcado a FCPython.
 
 ### Pipeline de trabajo
 
 ```
-Video (LongoMatch) → Carga manual FCPython → Python ETL → Visualizaciones → Reporte HTML
+Video (LongoMatch) → Carga manual FCPython → Python ETL → Dashboard Streamlit → Cuerpo técnico
+```
+
+### Dashboard interactivo
+
+El dashboard está construido con **Streamlit** y permite al cuerpo técnico consultar en tiempo real:
+
+- **Estadísticas por jugador** — eventos, participación, actividad por minuto
+- **Mapa de eventos en cancha** — posicionamiento, líneas de pase, zonas de actividad
+- **Heatmap por zonas** — grilla proporcional a la cancha real (130x90)
+
+#### Cómo correr el dashboard localmente
+
+```bash
+# Instalar dependencias
+pip install streamlit pandas plotly numpy
+
+# Navegar a la carpeta del dashboard
+cd torneo_promocional/dashboard
+
+# Correr la app
+streamlit run app.py
 ```
 
 ### Módulos en desarrollo
 
 - **Análisis táctico propio** — posicionamiento, presión, circuitos de juego
-- **Scouting de rivales** — tendencias, debilidades y patrones detectados por partido
-- **Reporte HTML post-partido** — documento interactivo con visualizaciones + clips de video embebidos (10 seg), entregable directo al cuerpo técnico
+- **Scouting de rivales** — tendencias y patrones por partido
+- **Reporte HTML post-partido** — documento interactivo con visualizaciones entregable al cuerpo técnico
 
 ---
-
-## Experiencia
-- **Estrella de Berisso**
-  - Video Analyst en juveniles 
-  - Ascendido a **Primera** - Torneo Promocional Amateur
-  - Análisis de rendimiento, táctica y scouting
-
-## 🔒 Confidencialidad
-El trabajo detallado con datos reales se mantiene privado por protección de menores y propiedad intelectual del club. **Solicita acceso a ejemplos completos por LinkedIn.**
 
 ## 🛠️ Tech Stack
 
 ### Datos y procesamiento
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
-![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
-![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)](https://pandas.pydata.org)
+[![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org)
+[![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org)
 
-### Visualización
-![Matplotlib](https://img.shields.io/badge/Matplotlib-ffffff?style=for-the-badge&logo=matplotlib&logoColor=black)
-![mplsoccer](https://img.shields.io/badge/mplsoccer-2E7D32?style=for-the-badge&logo=python&logoColor=white)
-![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)
+### Visualización y dashboard
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com)
+[![Matplotlib](https://img.shields.io/badge/Matplotlib-ffffff?style=for-the-badge&logo=matplotlib&logoColor=black)](https://matplotlib.org)
 
 ### Video y reportería
-![LongoMatch](https://img.shields.io/badge/LongoMatch-2E7D32?style=for-the-badge&logo=play&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-
-### Automatización
-![n8n](https://img.shields.io/badge/n8n-FF6D5B?style=for-the-badge&logo=n8n&logoColor=white)
+[![LongoMatch](https://img.shields.io/badge/LongoMatch-2E7D32?style=for-the-badge&logo=play&logoColor=white)](https://longomatch.com)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 
 ---
 
 ## 🔄 Próximos pasos
 
-- [x] Subir notebooks y outputs de juveniles
+- [x] Dashboard Streamlit con mapa de cancha y estadísticas
+- [ ] Páginas de Alertas y Fixture en el dashboard
 - [ ] Primer pipeline completo del Torneo Promocional
-- [ ] Template de reporte HTML post-partido con clips embebidos
-- [ ] Automatización de reportes semanales vía n8n
 
 ---
 
@@ -142,4 +127,4 @@ Buenos Aires, Argentina
 
 ---
 
-*Este repositorio tiene fines de documentación profesional y desarrollo analítico.*
+*Este repositorio tiene fines de documentación profesional y desarrollo analítico. Los datos publicados cuentan con autorización del Club Atlético Estrella de Berisso.*
