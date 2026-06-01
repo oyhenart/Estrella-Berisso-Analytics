@@ -6,7 +6,9 @@ st.set_page_config(page_title="Alertas", page_icon="🚨", layout="wide")
 
 @st.cache_data
 def cargar_alertas():
-    df = pd.read_csv("data/sanciones_lesiones.csv")
+    import os
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+df = pd.read_csv(os.path.join(BASE, "data", "sanciones_lesiones.csv"))
     if not df.empty:
         df["fecha_regreso"] = pd.to_datetime(df["fecha_regreso"], errors="coerce")
     return df
