@@ -8,7 +8,7 @@ st.set_page_config(page_title="Mapa de cancha", page_icon="🗺️", layout="wid
 
 @st.cache_data
 def cargar_datos():
-    df = pd.read_csv("data/events_clean.csv")
+    df = pd.read_csv(os.path.join(BASE, "data", "events_clean.csv"))
     df["tiempo_total"] = df["Mins"] * 60 + df["Secs"]
     pases = []
     for i in range(len(df) - 1):
@@ -27,7 +27,8 @@ def cargar_datos():
 
 st.title("🗺️ Mapa de eventos en cancha")
 
-if not os.path.exists("data/events_clean.csv"):
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if not os.path.exists(os.path.join(BASE, "data", "events_clean.csv")):
     st.info("⏳ El torneo aún no comenzó. El mapa estará disponible a partir del primer partido.")
     st.stop()
 
