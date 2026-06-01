@@ -1,10 +1,11 @@
-# Estrella de Berisso 
+# ⚽ Estrella de Berisso — Football Analytics
 
 **Analista de Datos y Rendimiento | Israel Oyhenart**  
 *Documentación del trabajo analítico realizado en el Club Atlético Estrella de Berisso*
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/israel-oyhenart/)
 [![Portfolio](https://img.shields.io/badge/Portfolio-2563EB?style=for-the-badge&logo=google-chrome&logoColor=white)](https://oyhenart.github.io/iao-analytics/)
+[![Dashboard](https://img.shields.io/badge/Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://estrella-cpa.streamlit.app)
 
 ---
 
@@ -21,39 +22,68 @@ Este repositorio es de **carácter público** con fines de documentación profes
 
 ---
 
-## Sobre este repositorio
+## 📋 Sobre este repositorio
 
-Este repositorio documenta mi trabajo como **Analista de Datos y Video Analista** en el Club Atlético Estrella de Berisso, comenzando en las divisiones juveniles y con proyección al primer equipo en el **Torneo Promocional Amateur**.
+Este repositorio documenta mi trabajo como **Analista de Datos y Video Analista** en el Club Atlético Estrella de Berisso, comenzando en las divisiones juveniles y con proyección al primer equipo en el **Torneo Promocional Amateur 2026**.
 
 El enfoque no es solo analizar lo que sucede en el campo, sino construir **sistemas de reportería reproducibles** que transformen datos y video en inteligencia táctica accionable para el cuerpo técnico.
 
 ---
 
-## Estructura del repositorio
+## 🗂️ Estructura del repositorio
 
 ```
 Estrella-Berisso-Analytics/
 │
-└── torneo_promocional/               # 🔄 En desarrollo
+├── juveniles/                        # ✅ Trabajo finalizado
+│   ├── data/
+│   │   ├── raw/                      # Datasets originales de FCPython (.xlsx)
+│   │   └── cleaned/                  # Datos procesados y normalizados
+│   ├── notebooks/
+│   │   ├── 7ma.ipynb
+│   │   └── 8va.ipynb
+│   └── outputs/                      # Visualizaciones generadas
+│
+└── code/                             # 🔄 Torneo Promocional Amateur 2026
+    ├── app.py                        # Punto de entrada del dashboard
     ├── data/
-    │   ├── raw/                      # Datos crudos por partido
-    │   └── cleaned/                  # Datos procesados
-    ├── dashboard/                    # 🆕 Dashboard interactivo (Streamlit)
-    │   ├── app.py                    # Punto de entrada
-    │   ├── pages/
-    │   │   ├── 1_Estadisticas.py
-    │   │   └── 2_Mapa_Cancha.py
-    │   └── data/
-    │       └── events_clean.csv
+    │   ├── events_clean.csv          # Eventos por partido (generado post-partido)
+    │   ├── Jugadores.csv             # Plantilla del equipo
+    │   ├── fixture.csv               # Fixture y resultados
+    │   └── sanciones_lesiones.csv    # Bajas por sanción o lesión
+    ├── static/
+    │   └── fotos/                    # Fotos de jugadores
+    └── pages/
+        ├── 1_Estadisticas.py         # Estadísticas por jugador
+        ├── 2_Mapa_Cancha.py          # Mapa de eventos + heatmap
+        ├── 3_Plantilla.py            # Tarjetas de jugadores
+        ├── 4_Fixture.py              # Fixture y resultados
+        └── 5_Alertas.py              # Sanciones y lesiones
 ```
 
 ---
 
-## Torneo Promocional Amateur
+## 📁 Fase 1 — Juveniles
 
 ### Contexto
 
-Pipeline de datos completo para el seguimiento del primer equipo en el **Torneo Promocional Amateur**. La fuente principal de datos es el **video** (partidos locales filmados + transmisiones de visitante), registrado y codificado con **LongoMatch** y volcado a FCPython.
+Trabajo desarrollado para las **divisiones juveniles** del club. Los datos fueron obtenidos desde [FCPython](https://fcpython.com/) y procesados con Python.
+
+### Análisis desarrollados
+
+| Notebook | Descripción |
+|---|---|
+| `8va.ipynb` | Mapas de calor por jugador y zonas de influencia colectiva |
+| `8va.ipynb` | Redes de pases y circuitos de juego |
+| `7ma.ipynb` | Dashboard integrado de rendimiento por partido |
+
+---
+
+## 📁 Fase 2 — Torneo Promocional Amateur 2026
+
+### Contexto
+
+Pipeline de datos completo para el seguimiento del primer equipo en el **Torneo Promocional Amateur 2026**. La fuente principal de datos es el **video** (partidos locales filmados + transmisiones de visitante), registrado con **LongoMatch** y volcado a FCPython.
 
 ### Pipeline de trabajo
 
@@ -61,32 +91,26 @@ Pipeline de datos completo para el seguimiento del primer equipo en el **Torneo 
 Video (LongoMatch) → Carga manual FCPython → Python ETL → Dashboard Streamlit → Cuerpo técnico
 ```
 
-### Dashboard interactivo
+### 🚀 Dashboard en vivo
 
-El dashboard está construido con **Streamlit** y permite al cuerpo técnico consultar en tiempo real:
+**[estrella-cpa.streamlit.app](https://estrella-cpa.streamlit.app)**
 
-- **Estadísticas por jugador** — eventos, participación, actividad por minuto
-- **Mapa de eventos en cancha** — posicionamiento, líneas de pase, zonas de actividad
-- **Heatmap por zonas** — grilla proporcional a la cancha real (130x90)
+| Página | Descripción |
+|---|---|
+| 🏠 Inicio | Métricas generales del partido |
+| 📊 Estadísticas | Eventos por jugador, participación y actividad por minuto |
+| 🗺️ Mapa de cancha | Posicionamiento, líneas de pase y heatmap por zonas |
+| 👥 Plantilla | Tarjetas de jugadores con foto, número y posición |
+| 🗓️ Fixture | Resultados y próximos partidos del Torneo Promocional |
+| 🚨 Alertas | Sanciones y lesiones con fecha de regreso |
 
 #### Cómo correr el dashboard localmente
 
 ```bash
-# Instalar dependencias
 pip install streamlit pandas plotly numpy
-
-# Navegar a la carpeta del dashboard
-cd torneo_promocional/dashboard
-
-# Correr la app
+cd code
 streamlit run app.py
 ```
-
-### Módulos en desarrollo
-
-- **Análisis táctico propio** — posicionamiento, presión, circuitos de juego
-- **Scouting de rivales** — tendencias y patrones por partido
-- **Reporte HTML post-partido** — documento interactivo con visualizaciones entregable al cuerpo técnico
 
 ---
 
@@ -99,21 +123,24 @@ streamlit run app.py
 [![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org)
 
 ### Visualización y dashboard
-[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Streamlit](https://img.shields.io/badge/Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://estrella-cpa.streamlit.app)
 [![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com)
 [![Matplotlib](https://img.shields.io/badge/Matplotlib-ffffff?style=for-the-badge&logo=matplotlib&logoColor=black)](https://matplotlib.org)
 
 ### Video y reportería
 [![LongoMatch](https://img.shields.io/badge/LongoMatch-2E7D32?style=for-the-badge&logo=play&logoColor=white)](https://longomatch.com)
-[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![FCPython](https://img.shields.io/badge/FCPython-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://fcpython.com)
 
 ---
 
 ## 🔄 Próximos pasos
 
-- [x] Dashboard Streamlit con mapa de cancha y estadísticas
-- [ ] Páginas de Alertas y Fixture en el dashboard
-- [ ] Primer pipeline completo del Torneo Promocional
+- [x] Dashboard Streamlit con 6 páginas deployado en Streamlit Cloud
+- [x] Fixture del Torneo Promocional Amateur 2026 cargado
+- [x] Plantilla del equipo con fotos
+- [ ] Subir notebooks y outputs de juveniles
+- [ ] Estadísticas y mapas una vez iniciado el torneo
+- [ ] Alertas de sanciones y lesiones en temporada
 
 ---
 
