@@ -5,7 +5,8 @@ import os
 
 st.set_page_config(page_title="Estadísticas", page_icon="📊", layout="wide")
 
-DATA_PATH = "data/events_clean.csv"
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
 
 @st.cache_data
 def cargar_datos():
