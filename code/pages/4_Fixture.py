@@ -1,13 +1,16 @@
 import streamlit as st
 import pandas as pd
+import os
 
 st.set_page_config(page_title="Fixture", page_icon="🗓️", layout="wide")
 
+# Definimos la base del proyecto a nivel global
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 @st.cache_data
 def cargar_fixture():
-    import os
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-df = pd.read_csv(os.path.join(BASE, "data", "fixture.csv"))
+    # Corregido el sangrado para que esté dentro de la función
+    df = pd.read_csv(os.path.join(BASE, "data", "fixture.csv"))
     return df
 
 st.title("🗓️ Fixture — Torneo Promocional Amateur 2026")
