@@ -55,12 +55,14 @@ for i in range(0, len(jugadores), COLS):
                 st.image(foto_path, use_container_width=True)
             else:
                 st.image(os.path.join(FOTOS_DIR, "sin_perfil.jpg"), use_container_width=True)
+            
+            # Tarjeta de jugador con diseño minimalista oscuro
             st.markdown(
                 f"""
-                <div style='text-align:center; padding: 4px 0'>
-                    <span style='font-size:1.4em; font-weight:700'>#{int(row['camiseta'])}</span><br>
-                    <span style='font-size:1em; font-weight:600'>{row['nombre']}</span><br>
-                    <span style='font-size:0.8em; color: #aaa'>{row['posicion']}</span>
+                <div style='text-align:center; border: 1px solid #2d2d2d; border-radius: 4px; padding: 8px; background-color: #0c0c0c; margin-bottom: 16px;'>
+                    <span style='font-family: monospace; font-size:1.3em; font-weight:700; color: #00ffcc; letter-spacing: -1px'>#{int(row['camiseta'])}</span><br>
+                    <span style='font-size:0.9em; font-weight:600; color: #e0e0e0'>{row['nombre']}</span><br>
+                    <span style='font-size:0.7em; color: #666; text-transform: uppercase; tracking-spacing: 1px'>{row['posicion']}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
