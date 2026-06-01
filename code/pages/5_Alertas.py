@@ -1,14 +1,17 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+import os
 
 st.set_page_config(page_title="Alertas", page_icon="🚨", layout="wide")
 
+# Definimos la base del proyecto a nivel global
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 @st.cache_data
 def cargar_alertas():
-    import os
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-df = pd.read_csv(os.path.join(BASE, "data", "sanciones_lesiones.csv"))
+    # Corregido el sangrado para que lea correctamente el CSV dentro de la función
+    df = pd.read_csv(os.path.join(BASE, "data", "sanciones_lesiones.csv"))
     if not df.empty:
         df["fecha_regreso"] = pd.to_datetime(df["fecha_regreso"], errors="coerce")
     return df
