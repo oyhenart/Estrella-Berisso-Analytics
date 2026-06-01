@@ -33,18 +33,7 @@ El enfoque no es solo analizar lo que sucede en el campo, sino construir **siste
 ## 🗂️ Estructura del repositorio
 
 ```
-Estrella-Berisso-Analytics/
-│
-├── juveniles/                        # ✅ Trabajo finalizado
-│   ├── data/
-│   │   ├── raw/                      # Datasets originales de FCPython (.xlsx)
-│   │   └── cleaned/                  # Datos procesados y normalizados
-│   ├── notebooks/
-│   │   ├── 7ma.ipynb
-│   │   └── 8va.ipynb
-│   └── outputs/                      # Visualizaciones generadas
-│
-└── code/                             # 🔄 Torneo Promocional Amateur 2026
+code/                             # 🔄 Torneo Promocional Amateur 2026
     ├── app.py                        # Punto de entrada del dashboard
     ├── data/
     │   ├── events_clean.csv          # Eventos por partido (generado post-partido)
@@ -63,23 +52,7 @@ Estrella-Berisso-Analytics/
 
 ---
 
-## 📁 Fase 1 — Juveniles
-
-### Contexto
-
-Trabajo desarrollado para las **divisiones juveniles** del club. Los datos fueron obtenidos desde [FCPython](https://fcpython.com/) y procesados con Python.
-
-### Análisis desarrollados
-
-| Notebook | Descripción |
-|---|---|
-| `8va.ipynb` | Mapas de calor por jugador y zonas de influencia colectiva |
-| `8va.ipynb` | Redes de pases y circuitos de juego |
-| `7ma.ipynb` | Dashboard integrado de rendimiento por partido |
-
----
-
-## 📁 Fase 2 — Torneo Promocional Amateur 2026
+## Torneo Promocional Amateur 2026
 
 ### Contexto
 
@@ -138,7 +111,6 @@ streamlit run app.py
 - [x] Dashboard Streamlit con 6 páginas deployado en Streamlit Cloud
 - [x] Fixture del Torneo Promocional Amateur 2026 cargado
 - [x] Plantilla del equipo con fotos
-- [ ] Subir notebooks y outputs de juveniles
 - [ ] Estadísticas y mapas una vez iniciado el torneo
 - [ ] Alertas de sanciones y lesiones en temporada
 
