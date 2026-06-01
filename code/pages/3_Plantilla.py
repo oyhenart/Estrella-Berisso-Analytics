@@ -4,10 +4,13 @@ import os
 
 st.set_page_config(page_title="Plantilla", page_icon="👥", layout="wide")
 
+# Definimos la base del proyecto a nivel global para que sea accesible en todo el script
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 @st.cache_data
 def cargar_jugadores():
-    BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-df = pd.read_csv(os.path.join(BASE, "data", "Jugadores.csv"))
+    # Corregido el sangrado de las líneas internas de la función
+    df = pd.read_csv(os.path.join(BASE, "data", "Jugadores.csv"))
     df["nombre"] = df["nombre"].str.strip().str.title()
     df["posicion"] = df["posicion"].str.strip().str.title()
     return df
