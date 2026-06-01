@@ -6,7 +6,8 @@ st.set_page_config(page_title="Plantilla", page_icon="👥", layout="wide")
 
 @st.cache_data
 def cargar_jugadores():
-    df = pd.read_csv("data/Jugadores.csv")
+    BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+df = pd.read_csv(os.path.join(BASE, "data", "Jugadores.csv"))
     df["nombre"] = df["nombre"].str.strip().str.title()
     df["posicion"] = df["posicion"].str.strip().str.title()
     return df
@@ -34,7 +35,7 @@ col4.metric("Mediocampistas + Delanteros",
 
 st.divider()
 
-FOTOS_DIR = "static/fotos"
+FOTOS_DIR = os.path.join(BASE, "static", "fotos")
 COLS = 5
 
 jugadores = df_filtrado.reset_index(drop=True)
