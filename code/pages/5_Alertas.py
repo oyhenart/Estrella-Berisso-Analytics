@@ -36,9 +36,9 @@ if df.empty:
 hoy = pd.Timestamp(date.today())
 
 # --- Separar por tipo ---
-amarillas = df[df["tipo"] == "Amarilla"].copy()
-sanciones = df[df["tipo"] == "Sanción"].copy()
-lesiones = df[df["tipo"] == "Lesión"].copy()
+amarillas = df[df["tipo"].str.lower() == "amarilla"].copy()
+sanciones = df[df["tipo"].str.lower().isin(["sanción", "sancion", "roja directa"])].copy()
+lesiones = df[df["tipo"].str.lower().isin(["lesión", "lesion"])].copy()
 
 # --- Métricas globales ---
 bajas_activas = 0
