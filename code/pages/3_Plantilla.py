@@ -4,12 +4,11 @@ import os
 
 st.set_page_config(page_title="Plantilla", page_icon="👥", layout="wide")
 
-# Definimos la base del proyecto a nivel global para que sea accesible en todo el script
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FOTOS_DIR = os.path.join(BASE, "static", "fotos")
 
-@st.cache_data
+@st.cache_data(ttl=0)
 def cargar_jugadores():
-    # Corregido el sangrado de las líneas internas de la función
     df = pd.read_csv(os.path.join(BASE, "data", "Jugadores.csv"))
     df["nombre"] = df["nombre"].str.strip().str.title()
     df["posicion"] = df["posicion"].str.strip().str.title()
@@ -38,9 +37,7 @@ col4.metric("Mediocampistas + Delanteros",
 
 st.divider()
 
-FOTOS_DIR = os.path.join(BASE, "static", "fotos")
 COLS = 5
-
 jugadores = df_filtrado.reset_index(drop=True)
 for i in range(0, len(jugadores), COLS):
     cols = st.columns(COLS)
@@ -54,15 +51,15 @@ for i in range(0, len(jugadores), COLS):
             if os.path.exists(foto_path):
                 st.image(foto_path, use_container_width=True)
             else:
-                st.image(os.path.join(FOTOS_DIR, "sin_perfil.jpg"), use_container_width=True)
-            
-            # Tarjeta de jugador con diseño minimalista oscuro
+                fallback = os.path.join(FOTOS_DIR, "sin_perfil.jpg")
+                if os.path.exists(fallback):
+                    st.image(fallback, use_container_width=True)
             st.markdown(
                 f"""
-                <div style='text-align:center; border: 1px solid #2d2d2d; border-radius: 4px; padding: 8px; background-color: #0c0c0c; margin-bottom: 16px;'>
-                    <span style='font-family: monospace; font-size:1.3em; font-weight:700; color: #00ffcc; letter-spacing: -1px'>#{int(row['camiseta'])}</span><br>
-                    <span style='font-size:0.9em; font-weight:600; color: #e0e0e0'>{row['nombre']}</span><br>
-                    <span style='font-size:0.7em; color: #666; text-transform: uppercase; tracking-spacing: 1px'>{row['posicion']}</span>
+                <div style='text-align:center; padding: 4px 0'>
+                    <span style='font-size:1.4em; font-weight:700'>#{int(row['camiseta'])}</span><br>
+                    <span style='font-size:1em; font-weight:600'>{row['nombre']}</span><br>
+                    <span style='font-size:0.8em; color: #aaa'>{row['posicion']}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,

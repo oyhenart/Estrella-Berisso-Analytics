@@ -4,20 +4,16 @@ import os
 
 st.set_page_config(page_title="Fixture", page_icon="🗓️", layout="wide")
 
-# Definimos la base del proyecto a nivel global
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-@st.cache_data
+@st.cache_data(ttl=0)
 def cargar_fixture():
-    # Corregido el sangrado para que esté dentro de la función
-    df = pd.read_csv(os.path.join(BASE, "data", "fixture.csv"))
-    return df
+    return pd.read_csv(os.path.join(BASE, "data", "fixture.csv"))
 
 st.title("🗓️ Fixture — Torneo Promocional Amateur 2026")
 
 df = cargar_fixture()
 
-# --- Métricas ---
 jugados = df[df["estado"] == "Jugado"]
 pendientes = df[df["estado"] == "Pendiente"]
 
@@ -28,7 +24,6 @@ if len(jugados) > 0:
     gf = jugados["goles_favor"].sum()
     gc = jugados["goles_contra"].sum()
     puntos = ganados * 3 + empatados
-
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     col1.metric("Partidos jugados", len(jugados))
     col2.metric("Puntos", puntos)
@@ -41,21 +36,17 @@ else:
 
 st.divider()
 
-# --- Tabla de fixture ---
 st.subheader("Fechas")
 
 for _, row in df.iterrows():
     col1, col2, col3, col4 = st.columns([1, 3, 3, 2])
-
     with col1:
         st.markdown(f"**Fecha {int(row['fecha'])}**")
-
     with col2:
         if row["condicion"] == "Local":
             st.markdown(f"🏠 **Estrella de Berisso** vs {row['rival']}")
         else:
             st.markdown(f"✈️ {row['rival']} vs **Estrella de Berisso**")
-
     with col3:
         if row["estado"] == "Jugado":
             gf = int(row["goles_favor"])
@@ -69,9 +60,7 @@ for _, row in df.iterrows():
             st.markdown(resultado)
         else:
             st.markdown("🕐 Pendiente")
-
     with col4:
         badge = "🟢 Local" if row["condicion"] == "Local" else "🔵 Visitante"
         st.markdown(badge)
-
     st.divider()

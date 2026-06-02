@@ -7,7 +7,7 @@ st.set_page_config(page_title="Alertas", page_icon="🚨", layout="wide")
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-@st.cache_data
+@st.cache_data(ttl=0)
 def cargar_alertas():
     df = pd.read_csv(os.path.join(BASE, "data", "sanciones_lesiones.csv"))
     if not df.empty and "fecha_regreso" in df.columns:
