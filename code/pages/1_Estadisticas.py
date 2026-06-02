@@ -33,11 +33,11 @@ else:
 st.divider()
 
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Pases", len(df_filtrado[df_filtrado["Event"] == "Pase"]))
-col2.metric("Recepciones", len(df_filtrado[df_filtrado["Event"] == "Recepción"]))
-col3.metric("Recuperaciones", len(df_filtrado[df_filtrado["Event"] == "Recuperación"]))
-col4.metric("Remates", len(df_filtrado[df_filtrado["Event"] == "Remate"]))
-col5.metric("Goles", len(df_filtrado[df_filtrado["Event"] == "Gol"]))
+col1.metric("Pases", len(df_filtrado[df_filtrado["Event"] == "pase"]))
+col2.metric("Recepciones", len(df_filtrado[df_filtrado["Event"] == "recepcion"]))
+col3.metric("Recuperaciones", len(df_filtrado[df_filtrado["Event"] == "recuperacion"]))
+col4.metric("Remates", len(df_filtrado[df_filtrado["Event"] == "remate"]))
+col5.metric("Goles", len(df_filtrado[df_filtrado["Event"] == "gol"]))
 
 st.divider()
 

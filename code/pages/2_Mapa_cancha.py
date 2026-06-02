@@ -6,29 +6,25 @@ import os
 
 st.set_page_config(page_title="Mapa de cancha", page_icon="🗺️", layout="wide")
 
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
+
 @st.cache_data
 def cargar_datos():
-    df = pd.read_csv(os.path.join(BASE, "data", "events_clean.csv"))
+    df = pd.read_csv(DATA_PATH)
     df["tiempo_total"] = df["Mins"] * 60 + df["Secs"]
-    pases = []
-    for i in range(len(df) - 1):
-        if df.iloc[i]["Event"] == "Pase" and df.iloc[i + 1]["Event"] == "Recepción":
-            pases.append({
-                "jugador_origen": df.iloc[i]["Player"],
-                "jugador_destino": df.iloc[i + 1]["Player"],
-                "x_origen": df.iloc[i]["X"],
-                "y_origen": df.iloc[i]["Y"],
-                "x_destino": df.iloc[i + 1]["X"],
-                "y_destino": df.iloc[i + 1]["Y"],
-                "mins": df.iloc[i]["Mins"],
-                "secs": df.iloc[i]["Secs"],
-            })
-    return df, pd.DataFrame(pases)
+    # Armar df_pases desde X2/Y2 del nuevo formato
+    pases = df[df["Event"] == "pase"].copy()
+    pases = pases.rename(columns={
+        "Player": "jugador_origen", "X": "x_origen", "Y": "y_origen",
+        "X2": "x_destino", "Y2": "y_destino", "Mins": "mins", "Secs": "secs"
+    })
+    df_pases = pases[["jugador_origen","x_origen","y_origen","x_destino","y_destino","mins","secs"]].dropna(subset=["x_destino","y_destino"])
+    return df, df_pases
 
 st.title("🗺️ Mapa de eventos en cancha")
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if not os.path.exists(os.path.join(BASE, "data", "events_clean.csv")):
+if not os.path.exists(DATA_PATH):
     st.info("⏳ El torneo aún no comenzó. El mapa estará disponible a partir del primer partido.")
     st.stop()
 
@@ -39,10 +35,13 @@ AG_X = 12.7; AG_Y = 44.8
 AC_X = 4.2;  AC_Y = 20.4
 ARCO = 8.1;  CR   = 7.0
 
+# Colores en minúsculas
 colores = {
-    "Pase": "#3498db", "Recepción": "#2ecc71", "Recuperación": "#e67e22",
-    "Conducción": "#9b59b6", "Tiro Libre": "#f1c40f",
-    "Remate": "#e74c3c", "Centro": "#1abc9c", "Gol": "#ff0000",
+    "pase": "#3498db", "recuperacion": "#2ecc71", "perdida": "#e74c3c",
+    "conduccion": "#9b59b6", "tiro libre": "#f1c40f",
+    "remate": "#e74c3c", "centro": "#1abc9c", "gol": "#ff0000",
+    "despeje": "#95a5a6", "corner": "#e67e22",
+    "falta recibida": "#00bcd4", "falta cometida": "#ff5722",
 }
 
 col1, col2 = st.columns(2)
@@ -72,8 +71,7 @@ def shapes_cancha():
                     line=dict(color="white", width=lw), layer="below")
     def circle(x0, y0, x1, y1):
         return dict(type="circle", x0=x0, y0=y0, x1=x1, y1=y1,
-                    line=dict(color="white", width=1.5),
-                    fillcolor="rgba(0,0,0,0)", layer="below")
+                    line=dict(color="white", width=1.5), fillcolor="rgba(0,0,0,0)", layer="below")
     s.append(rect(0, 0, W, H, fill="#4a7c3f", lw=2))
     s.append(line(W/2, 0, W/2, H))
     s.append(circle(W/2-CR, H/2-CR, W/2+CR, H/2+CR))
@@ -102,7 +100,8 @@ def layout_cancha(height=600):
 # --- Figura principal ---
 fig = go.Figure()
 
-if "Pase" in eventos_sel and not df_pases_f.empty:
+# Líneas de pase con X2/Y2
+if "pase" in eventos_sel and not df_pases_f.empty:
     for _, row in df_pases_f.iterrows():
         fig.add_trace(go.Scatter(
             x=[row["x_origen"], row["x_destino"]],
@@ -119,7 +118,7 @@ for evento in eventos_sel:
     fig.add_trace(go.Scatter(
         x=subset["X"], y=subset["Y"],
         mode="markers", name=evento,
-        marker=dict(color=colores.get(evento, "#fff"), size=9, opacity=0.9,
+        marker=dict(color=colores.get(evento, "#ffffff"), size=9, opacity=0.9,
                     line=dict(color="white", width=0.8)),
         customdata=subset[["Player", "Mins", "Secs"]].values,
         hovertemplate="<b>%{customdata[0]}</b><br>Evento: " + evento +
@@ -132,7 +131,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.divider()
 
-# --- Heatmap por zonas ---
+# --- Heatmap ---
 st.subheader("Zonas de mayor actividad")
 
 nx, ny = 13, 9
@@ -145,29 +144,17 @@ for _, row in df_filtrado.iterrows():
     yi = min(int(row["Y"] / H * ny), ny - 1)
     grid[yi, xi] += 1
 
-# Centros de cada celda
 x_centers = [(xs[i] + xs[i+1]) / 2 for i in range(nx)]
 y_centers = [(ys[i] + ys[i+1]) / 2 for i in range(ny)]
 
 fig2 = go.Figure()
-
 fig2.add_trace(go.Heatmap(
-    z=grid,
-    x=x_centers,
-    y=y_centers,
-    colorscale=[
-        [0.0, "rgba(0,0,0,0)"],
-        [0.01, "rgba(255,255,0,0.5)"],
-        [0.5, "rgba(255,140,0,0.75)"],
-        [1.0, "rgba(200,0,0,0.85)"],
-    ],
-    showscale=False,
-    hovertemplate="Eventos: %{z}<extra></extra>",
-    zmin=0,
-    xgap=1,
-    ygap=1,
+    z=grid, x=x_centers, y=y_centers,
+    colorscale=[[0.0, "rgba(0,0,0,0)"], [0.01, "rgba(255,255,0,0.5)"],
+                [0.5, "rgba(255,140,0,0.75)"], [1.0, "rgba(200,0,0,0.85)"]],
+    showscale=False, hovertemplate="Eventos: %{z}<extra></extra>",
+    zmin=0, xgap=1, ygap=1,
 ))
-
 layout2 = layout_cancha(500)
 layout2.pop("legend", None)
 fig2.update_layout(**layout2)

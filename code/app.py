@@ -41,8 +41,8 @@ st.session_state["df_pases"] = df_pases
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total eventos", len(df))
 col2.metric("Jugadores", df["Player"].nunique())
-col3.metric("Pases registrados", len(df[df["Event"] == "Pase"]))
-col4.metric("Goles", len(df[df["Event"] == "Gol"]))
+col3.metric("Pases registrados", len(df[df["Event"] == "pase"]))
+col4.metric("Goles", len(df[df["Event"] == "gol"]))
 
 st.divider()
 
