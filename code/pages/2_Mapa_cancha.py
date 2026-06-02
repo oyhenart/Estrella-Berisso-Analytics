@@ -89,7 +89,7 @@ def layout_cancha(height=600):
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="#4a7c3f",
-        xaxis=dict(range=[W+2, -2], showgrid=False, zeroline=False, showticklabels=False),
+        xaxis=dict(range=[-2, W+2], showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(range=[H+2, -2], showgrid=False, zeroline=False, showticklabels=False,
                    scaleanchor="x", scaleratio=0.69),
         shapes=shapes_cancha(),
