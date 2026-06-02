@@ -11,7 +11,7 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def cargar_alertas():
     df = pd.read_csv(os.path.join(BASE, "data", "sanciones_lesiones.csv"))
     if not df.empty and "fecha_regreso" in df.columns:
-        df["fecha_regreso"] = pd.to_datetime(df["fecha_regreso"], errors="coerce")
+        df["fecha_regreso"] = pd.to_datetime(df["fecha_regreso"], dayfirst=True, errors="coerce")
     return df
 
 def umbral_suspension(sanciones_cumplidas):
