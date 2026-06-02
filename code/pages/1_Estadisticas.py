@@ -34,7 +34,7 @@ st.divider()
 
 col1, col2, col3, col4, col5 = st.columns(5)
 col1.metric("Pases", len(df_filtrado[df_filtrado["Event"] == "pase"]))
-col2.metric("Recepciones", len(df_filtrado[df_filtrado["Event"] == "recepcion"]))
+col2.metric("Faltas cometidas", len(df_filtrado[df_filtrado["Event"] == "falta cometida"]))
 col3.metric("Recuperaciones", len(df_filtrado[df_filtrado["Event"] == "recuperacion"]))
 col4.metric("Remates", len(df_filtrado[df_filtrado["Event"] == "remate"]))
 col5.metric("Goles", len(df_filtrado[df_filtrado["Event"] == "gol"]))
