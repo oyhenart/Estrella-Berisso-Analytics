@@ -10,7 +10,26 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def cargar_fixture():
     return pd.read_csv(os.path.join(BASE, "data", "fixture.csv"))
 
-st.title("🗓️ Fixture — Torneo Promocional Amateur 2026")
+# --- Sidebar ---
+escudo_path = os.path.join(BASE, "static", "escudo.png")
+if os.path.exists(escudo_path):
+    st.sidebar.image(escudo_path, width=72)
+st.sidebar.markdown("""
+<div style='padding: 6px 0 20px 0'>
+    <div style='font-size:1.05em; font-weight:700; color:#EEEEEE; line-height:1.3'>Club Atlético<br>Estrella de Berisso</div>
+    <div style='font-size:0.72em; color:#555; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
+    <div style='margin: 16px 0; height:1px; background:linear-gradient(to right, #E63946, transparent)'></div>
+    <div style='font-size:0.7em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
+    <div style='font-size:0.68em; color:#444; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style='margin-bottom:28px'>
+    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>Torneo Promocional Amateur 2026</p>
+    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>Fixture y resultados</h1>
+</div>
+""", unsafe_allow_html=True)
 
 df = cargar_fixture()
 

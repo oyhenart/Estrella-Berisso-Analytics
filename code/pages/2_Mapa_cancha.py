@@ -22,7 +22,26 @@ def cargar_datos():
     df_pases = pases[["jugador_origen","x_origen","y_origen","x_destino","y_destino","mins","secs","fecha"]].dropna(subset=["x_destino","y_destino"])
     return df, df_pases
 
-st.title("🗺️ Mapa de eventos en cancha")
+# --- Sidebar ---
+escudo_path = os.path.join(BASE, "static", "escudo.png")
+if os.path.exists(escudo_path):
+    st.sidebar.image(escudo_path, width=72)
+st.sidebar.markdown("""
+<div style='padding: 6px 0 20px 0'>
+    <div style='font-size:1.05em; font-weight:700; color:#EEEEEE; line-height:1.3'>Club Atlético<br>Estrella de Berisso</div>
+    <div style='font-size:0.72em; color:#555; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
+    <div style='margin: 16px 0; height:1px; background:linear-gradient(to right, #E63946, transparent)'></div>
+    <div style='font-size:0.7em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
+    <div style='font-size:0.68em; color:#444; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style='margin-bottom:28px'>
+    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>Análisis</p>
+    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>Mapa de eventos en cancha</h1>
+</div>
+""", unsafe_allow_html=True)
 
 if not os.path.exists(DATA_PATH):
     st.info("⏳ El torneo aún no comenzó. El mapa estará disponible a partir del primer partido.")
