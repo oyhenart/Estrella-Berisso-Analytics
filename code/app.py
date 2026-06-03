@@ -23,12 +23,17 @@ def cargar_fixture():
     return pd.read_csv(FIXTURE_PATH)
 
 # --- Sidebar ---
+escudo_path = os.path.join(BASE, "static", "escudo.png")
+if os.path.exists(escudo_path):
+    st.sidebar.image(escudo_path, width=90)
 st.sidebar.markdown("""
-<div style='text-align:center; padding: 24px 0 16px 0'>
-    <div style='font-size:2em; font-weight:900; letter-spacing:3px; color:#E63946'>IAO</div>
-    <div style='font-size:0.65em; color:#666; letter-spacing:4px; text-transform:uppercase; margin-top:4px'>Football Analytics</div>
-    <div style='border-top: 1px solid #E63946; margin: 14px 16px; opacity:0.3'></div>
-    <div style='font-size:0.68em; color:#555; font-style:italic'>"Transformo datos en decisiones."</div>
+<div style='text-align:center; padding: 8px 0 16px 0'>
+    <div style='font-size:1.1em; font-weight:900; letter-spacing:1px; color:#F0F0F0'>Club Atlético</div>
+    <div style='font-size:1.4em; font-weight:900; letter-spacing:2px; color:#F0F0F0'>Estrella de Berisso</div>
+    <div style='font-size:0.65em; color:#666; letter-spacing:2px; text-transform:uppercase; margin-top:2px'>La Cebra</div>
+    <div style='border-top: 1px solid #333; margin: 14px 16px'></div>
+    <div style='font-size:0.65em; letter-spacing:3px; text-transform:uppercase; color:#E63946; font-weight:600'>IAO Football Analytics</div>
+    <div style='font-size:0.65em; color:#444; font-style:italic; margin-top:4px'>"Transformo datos en decisiones."</div>
 </div>
 """, unsafe_allow_html=True)
 
