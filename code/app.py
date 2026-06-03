@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 st.set_page_config(
-    page_title="Estrella FC - Dashboard",
+    page_title="Estrella FC · Dashboard",
     page_icon="⚽",
     layout="wide",
 )
@@ -25,35 +25,34 @@ def cargar_fixture():
 # --- Sidebar ---
 escudo_path = os.path.join(BASE, "static", "escudo.png")
 if os.path.exists(escudo_path):
-    st.sidebar.image(escudo_path, width=90)
+    st.sidebar.image(escudo_path, width=72)
+
 st.sidebar.markdown("""
-<div style='text-align:center; padding: 8px 0 16px 0'>
-    <div style='font-size:1.1em; font-weight:900; letter-spacing:1px; color:#F0F0F0'>Club Atlético</div>
-    <div style='font-size:1.4em; font-weight:900; letter-spacing:2px; color:#F0F0F0'>Estrella de Berisso</div>
-    <div style='font-size:0.65em; color:#666; letter-spacing:2px; text-transform:uppercase; margin-top:2px'>La Cebra</div>
-    <div style='border-top: 1px solid #333; margin: 14px 16px'></div>
-    <div style='font-size:0.65em; letter-spacing:3px; text-transform:uppercase; color:#E63946; font-weight:600'>IAO Football Analytics</div>
-    <div style='font-size:0.65em; color:#444; font-style:italic; margin-top:4px'>"Transformo datos en decisiones."</div>
+<div style='padding: 6px 0 20px 0'>
+    <div style='font-size:1.05em; font-weight:700; color:#EEEEEE; line-height:1.3'>
+        Club Atlético<br>Estrella de Berisso
+    </div>
+    <div style='font-size:0.72em; color:#555; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
+    <div style='margin: 16px 0; height:1px; background:linear-gradient(to right, #E63946, transparent)'></div>
+    <div style='font-size:0.7em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
+    <div style='font-size:0.68em; color:#444; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
 </div>
 """, unsafe_allow_html=True)
 
 # --- Header ---
 st.markdown("""
-<div style='margin-bottom: 8px'>
-    <span style='font-size:0.75em; letter-spacing:4px; text-transform:uppercase; color:#E63946; font-weight:600'>Torneo Promocional Amateur 2026</span>
-</div>
-<div style='font-size:2.2em; font-weight:900; letter-spacing:-1px; margin-bottom:24px'>
-    Estrella de Berisso — Panel de análisis
+<div style='margin-bottom:28px'>
+    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>
+        Torneo Promocional Amateur 2026
+    </p>
+    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>
+        Panel de análisis
+    </h1>
 </div>
 """, unsafe_allow_html=True)
 
 if not os.path.exists(DATA_PATH):
-    st.markdown("""
-    <div style='background:#1A1A1A; border-left: 3px solid #E63946; padding: 20px 24px; border-radius: 4px; margin-top: 16px'>
-        <div style='color:#E63946; font-size:0.75em; letter-spacing:3px; text-transform:uppercase; margin-bottom:6px'>Estado</div>
-        <div style='font-size:1.1em; color:#F0F0F0'>El torneo aún no comenzó. Las estadísticas estarán disponibles a partir del primer partido.</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("⏳ El torneo aún no comenzó. Las estadísticas estarán disponibles a partir del primer partido.")
     st.stop()
 
 df = cargar_datos()
@@ -80,41 +79,41 @@ if condicion_sel != "Local y Visitante" and num_fecha is None:
     fechas_cond = fixture[fixture["condicion"] == condicion_sel]["fecha"].tolist()
     df_filtrado = df_filtrado[df_filtrado["fecha"].isin(fechas_cond)]
 
-st.markdown("<div style='margin: 24px 0 8px 0; border-top: 1px solid #222'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin:20px 0; height:1px; background:#222'></div>", unsafe_allow_html=True)
 
-# --- Métricas custom ---
-total_eventos = len(df_filtrado)
-total_jugadores = df_filtrado["Player"].nunique()
-total_pases = len(df_filtrado[df_filtrado["Event"] == "pase"])
-total_goles = len(df_filtrado[df_filtrado["Event"] == "gol"])
+# --- Métricas ---
+total_eventos     = len(df_filtrado)
+total_jugadores   = df_filtrado["Player"].nunique()
+total_pases       = len(df_filtrado[df_filtrado["Event"] == "pase"])
 total_recuperaciones = len(df_filtrado[df_filtrado["Event"] == "recuperacion"])
-total_remates = len(df_filtrado[df_filtrado["Event"] == "remate"])
+total_remates     = len(df_filtrado[df_filtrado["Event"] == "remate"])
+total_goles       = len(df_filtrado[df_filtrado["Event"] == "gol"])
 
-def metric_card(label, value, accent=False):
-    border = "#E63946" if accent else "#2A2A2A"
-    val_color = "#E63946" if accent else "#F0F0F0"
+def card(label, value, highlight=False):
+    top_border = "border-top: 2px solid #E63946;" if highlight else "border-top: 2px solid #2A2A2A;"
+    val_color = "#E63946" if highlight else "#EEEEEE"
     return f"""
-    <div style='background:#141414; border:1px solid {border}; border-radius:6px; padding:20px 24px; height:100%'>
-        <div style='font-size:0.65em; letter-spacing:3px; text-transform:uppercase; color:#666; margin-bottom:10px'>{label}</div>
-        <div style='font-size:2.4em; font-weight:900; color:{val_color}; letter-spacing:-1px'>{value}</div>
+    <div style='background:#1C1C1C; {top_border} border-radius:6px; padding:18px 20px;'>
+        <div style='font-size:0.68em; color:#666; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px'>{label}</div>
+        <div style='font-size:2em; font-weight:800; color:{val_color}; letter-spacing:-0.5px'>{value}</div>
     </div>
     """
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
-c1.markdown(metric_card("Eventos", total_eventos, accent=True), unsafe_allow_html=True)
-c2.markdown(metric_card("Jugadores", total_jugadores), unsafe_allow_html=True)
-c3.markdown(metric_card("Pases", total_pases), unsafe_allow_html=True)
-c4.markdown(metric_card("Recuperaciones", total_recuperaciones), unsafe_allow_html=True)
-c5.markdown(metric_card("Remates", total_remates), unsafe_allow_html=True)
-c6.markdown(metric_card("Goles", total_goles, accent=total_goles > 0), unsafe_allow_html=True)
+c1.markdown(card("Eventos", total_eventos, highlight=True), unsafe_allow_html=True)
+c2.markdown(card("Jugadores", total_jugadores), unsafe_allow_html=True)
+c3.markdown(card("Pases", total_pases), unsafe_allow_html=True)
+c4.markdown(card("Recuperaciones", total_recuperaciones), unsafe_allow_html=True)
+c5.markdown(card("Remates", total_remates), unsafe_allow_html=True)
+c6.markdown(card("Goles", total_goles, highlight=total_goles > 0), unsafe_allow_html=True)
 
-st.markdown("<div style='margin: 28px 0 20px 0'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin:28px 0 16px 0'></div>", unsafe_allow_html=True)
 
-# --- Tabla de jugadores ---
+# --- Tabla ---
 st.markdown("""
-<div style='font-size:0.65em; letter-spacing:4px; text-transform:uppercase; color:#E63946; margin-bottom:12px; font-weight:600'>
+<p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin-bottom:12px'>
     Participación por jugador
-</div>
+</p>
 """, unsafe_allow_html=True)
 
 resumen = df_filtrado.groupby("Player")["Event"].count().sort_values(ascending=False).reset_index()
