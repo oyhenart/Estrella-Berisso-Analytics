@@ -19,7 +19,7 @@ def cargar_datos():
         "Player": "jugador_origen", "X": "x_origen", "Y": "y_origen",
         "X2": "x_destino", "Y2": "y_destino", "Mins": "mins", "Secs": "secs"
     })
-    df_pases = pases[["jugador_origen","x_origen","y_origen","x_destino","y_destino","mins","secs"]].dropna(subset=["x_destino","y_destino"])
+    df_pases = pases[["jugador_origen","x_origen","y_origen","x_destino","y_destino","mins","secs","fecha"]].dropna(subset=["x_destino","y_destino"])
     return df, df_pases
 
 st.title("🗺️ Mapa de eventos en cancha")
@@ -44,22 +44,51 @@ colores = {
     "falta recibida": "#00bcd4", "falta cometida": "#ff5722",
 }
 
-col1, col2 = st.columns(2)
+# Cargar fixture para filtro de condición
+import os as _os
+_fixture_path = _os.path.join(BASE, "data", "fixture.csv")
+import pandas as _pd
+fixture = _pd.read_csv(_fixture_path)
+
+fechas_disponibles = sorted(df["fecha"].unique().tolist())
+opciones_fecha = ["Todos los partidos"] + [f"Fecha {f}" for f in fechas_disponibles]
+
+col1, col2, col3 = st.columns(3)
 with col1:
+    fecha_sel = st.selectbox("Partido", opciones_fecha)
+with col2:
+    condicion_sel = st.selectbox("Condición", ["Local y Visitante", "Local", "Visitante"])
+with col3:
     jugadores = ["Todos"] + sorted(df["Player"].unique().tolist())
     jugador_sel = st.selectbox("Jugador", jugadores)
-with col2:
-    eventos_disponibles = sorted(df["Event"].unique().tolist())
-    eventos_sel = st.multiselect("Tipo de evento", eventos_disponibles, default=eventos_disponibles)
+
+eventos_disponibles = sorted(df["Event"].unique().tolist())
+eventos_sel = st.multiselect("Tipo de evento", eventos_disponibles, default=eventos_disponibles)
 
 st.divider()
 
-df_filtrado = df[df["Event"].isin(eventos_sel)]
+# Aplicar filtros
+if fecha_sel != "Todos los partidos":
+    num_fecha = int(fecha_sel.replace("Fecha ", ""))
+    df_filtrado = df[df["fecha"] == num_fecha]
+else:
+    num_fecha = None
+    df_filtrado = df.copy()
+
+if condicion_sel != "Local y Visitante" and num_fecha is None:
+    fechas_cond = fixture[fixture["condicion"] == condicion_sel]["fecha"].tolist()
+    df_filtrado = df_filtrado[df_filtrado["fecha"].isin(fechas_cond)]
+
+df_filtrado = df_filtrado[df_filtrado["Event"].isin(eventos_sel)]
+
 if jugador_sel != "Todos":
     df_filtrado = df_filtrado[df_filtrado["Player"] == jugador_sel]
     df_pases_f = df_pases[df_pases["jugador_origen"] == jugador_sel]
 else:
     df_pases_f = df_pases
+
+if num_fecha is not None:
+    df_pases_f = df_pases_f[df_pases_f["fecha"] == num_fecha] if "fecha" in df_pases_f.columns else df_pases_f
 
 def shapes_cancha():
     s = []

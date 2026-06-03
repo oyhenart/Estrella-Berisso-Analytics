@@ -7,12 +7,17 @@ st.set_page_config(page_title="Estadísticas", page_icon="📊", layout="wide")
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
+FIXTURE_PATH = os.path.join(BASE, "data", "fixture.csv")
 
 @st.cache_data
 def cargar_datos():
     df = pd.read_csv(DATA_PATH)
     df["tiempo_total"] = df["Mins"] * 60 + df["Secs"]
     return df
+
+@st.cache_data(ttl=0)
+def cargar_fixture():
+    return pd.read_csv(FIXTURE_PATH)
 
 st.title("📊 Estadísticas por jugador")
 
@@ -21,17 +26,39 @@ if not os.path.exists(DATA_PATH):
     st.stop()
 
 df = cargar_datos()
+fixture = cargar_fixture()
 
-jugadores = ["Todos"] + sorted(df["Player"].unique().tolist())
-jugador_sel = st.selectbox("Filtrar por jugador", jugadores)
+# --- Filtros ---
+fechas_disponibles = sorted(df["fecha"].unique().tolist())
+opciones_fecha = ["Todos los partidos"] + [f"Fecha {f}" for f in fechas_disponibles]
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    fecha_sel = st.selectbox("Partido", opciones_fecha)
+with col2:
+    condicion_sel = st.selectbox("Condición", ["Local y Visitante", "Local", "Visitante"])
+with col3:
+    jugadores = ["Todos"] + sorted(df["Player"].unique().tolist())
+    jugador_sel = st.selectbox("Jugador", jugadores)
+
+# Aplicar filtros
+if fecha_sel != "Todos los partidos":
+    num_fecha = int(fecha_sel.replace("Fecha ", ""))
+    df_filtrado = df[df["fecha"] == num_fecha]
+else:
+    num_fecha = None
+    df_filtrado = df.copy()
+
+if condicion_sel != "Local y Visitante" and num_fecha is None:
+    fechas_cond = fixture[fixture["condicion"] == condicion_sel]["fecha"].tolist()
+    df_filtrado = df_filtrado[df_filtrado["fecha"].isin(fechas_cond)]
 
 if jugador_sel != "Todos":
-    df_filtrado = df[df["Player"] == jugador_sel]
-else:
-    df_filtrado = df
+    df_filtrado = df_filtrado[df_filtrado["Player"] == jugador_sel]
 
 st.divider()
 
+# --- Métricas ---
 col1, col2, col3, col4, col5 = st.columns(5)
 col1.metric("Pases", len(df_filtrado[df_filtrado["Event"] == "pase"]))
 col2.metric("Faltas cometidas", len(df_filtrado[df_filtrado["Event"] == "falta cometida"]))
@@ -55,15 +82,22 @@ with col_izq:
 with col_der:
     st.subheader("Participación por jugador")
     if jugador_sel == "Todos":
-        part = df.groupby("Player")["Event"].count().sort_values(ascending=False).reset_index()
+        part = df_filtrado.groupby("Player")["Event"].count().sort_values(ascending=False).reset_index()
         part.columns = ["Jugador", "Eventos"]
         fig2 = px.bar(part, x="Jugador", y="Eventos", color="Jugador",
                       color_discrete_sequence=px.colors.qualitative.Safe)
         fig2.update_layout(showlegend=False, xaxis_title="", yaxis_title="Eventos")
         st.plotly_chart(fig2, use_container_width=True)
     else:
-        df["grupo"] = df["Player"].apply(lambda x: jugador_sel if x == jugador_sel else "Resto del equipo")
-        comp = df.groupby("grupo")["Event"].count().reset_index()
+        df_base = df.copy()
+        if condicion_sel != "Local y Visitante" and num_fecha is None:
+            fechas_cond = fixture[fixture["condicion"] == condicion_sel]["fecha"].tolist()
+            df_base = df_base[df_base["fecha"].isin(fechas_cond)]
+        if num_fecha:
+            df_base = df_base[df_base["fecha"] == num_fecha]
+        df_base["grupo"] = df_base["Player"].apply(
+            lambda x: jugador_sel if x == jugador_sel else "Resto del equipo")
+        comp = df_base.groupby("grupo")["Event"].count().reset_index()
         comp.columns = ["Grupo", "Eventos"]
         fig2 = px.pie(comp, values="Eventos", names="Grupo",
                       color_discrete_sequence=["#2ecc71", "#bdc3c7"])
@@ -72,9 +106,9 @@ with col_der:
 st.divider()
 
 st.subheader("Actividad durante el partido")
-df_filtrado = df_filtrado.copy()
-df_filtrado["minuto"] = df_filtrado["Mins"].astype(int)
-actividad = df_filtrado.groupby(["minuto", "Event"]).size().reset_index(name="count")
+df_act = df_filtrado.copy()
+df_act["minuto"] = df_act["Mins"].astype(int)
+actividad = df_act.groupby(["minuto", "Event"]).size().reset_index(name="count")
 fig3 = px.bar(actividad, x="minuto", y="count", color="Event",
               color_discrete_sequence=px.colors.qualitative.Safe,
               labels={"minuto": "Minuto", "count": "Eventos", "Event": "Tipo"})
@@ -85,8 +119,8 @@ st.divider()
 
 st.subheader("Detalle de eventos")
 st.dataframe(
-    df_filtrado[["Player", "Event", "Mins", "Secs", "X", "Y"]]
-    .rename(columns={"Player": "Jugador", "Event": "Evento"})
+    df_filtrado[["fecha", "Player", "Event", "Mins", "Secs", "X", "Y"]]
+    .rename(columns={"fecha": "Fecha", "Player": "Jugador", "Event": "Evento"})
     .reset_index(drop=True),
     use_container_width=True, hide_index=True,
 )
