@@ -22,6 +22,16 @@ def cargar_datos():
 def cargar_fixture():
     return pd.read_csv(FIXTURE_PATH)
 
+# --- Sidebar con identidad de marca ---
+st.sidebar.markdown("""
+<div style='text-align:center; padding: 20px 0 10px 0'>
+    <div style='font-size:2.2em; font-weight:900; letter-spacing:2px; color:#E63946'>IAO</div>
+    <div style='font-size:0.75em; color:#888; letter-spacing:3px; text-transform:uppercase; margin-top:2px'>Football Analytics</div>
+    <div style='border-top: 1px solid #E63946; margin: 12px 0; opacity:0.4'></div>
+    <div style='font-size:0.7em; color:#666; font-style:italic'>"Transformo datos en decisiones."</div>
+</div>
+""", unsafe_allow_html=True)
+
 st.title("⚽ Estrella FC — Panel de análisis")
 
 if not os.path.exists(DATA_PATH):
