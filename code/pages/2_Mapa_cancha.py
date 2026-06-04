@@ -4,16 +4,38 @@ import numpy as np
 import plotly.graph_objects as go
 import os
 
-st.set_page_config(page_title="Mapa de cancha · Estrella FC", page_icon="🗺️", layout="wide")
+from components.layout import (
+    inject_css,
+    render_sidebar,
+    render_header
+)
 
-st.markdown("""
-<style>
-#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(
+    page_title="Mapa de cancha",
+    page_icon="🗺️",
+    layout="wide"
+)
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
+inject_css()
+
+BASE = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
+
+render_sidebar(BASE)
+
+render_header(
+    "Análisis",
+    "Mapa de eventos en cancha"
+)
+
+DATA_PATH = os.path.join(
+    BASE,
+    "data",
+    "events_clean.csv"
+)
 
 @st.cache_data
 def cargar_datos():
@@ -27,27 +49,6 @@ def cargar_datos():
     })
     df_pases = pases[["jugador_origen","x_origen","y_origen","x_destino","y_destino","mins","secs","fecha"]].dropna(subset=["x_destino","y_destino"])
     return df, df_pases
-
-# --- Sidebar ---
-escudo_path = os.path.join(BASE, "static", "escudo.png")
-if os.path.exists(escudo_path):
-    st.sidebar.image(escudo_path, width=72)
-st.sidebar.markdown("""
-<div style='padding: 6px 0 20px 0'>
-    <div style='font-size:1.05em; font-weight:700; color:#EEEEEE; line-height:1.3'>Club Atlético<br>Estrella de Berisso</div>
-    <div style='font-size:0.72em; color:#555; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
-    <div style='margin: 16px 0; height:1px; background:linear-gradient(to right, #E63946, transparent)'></div>
-    <div style='font-size:0.7em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
-    <div style='font-size:0.68em; color:#444; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div style='margin-bottom:28px'>
-    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>Análisis</p>
-    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>Mapa de eventos en cancha</h1>
-</div>
-""", unsafe_allow_html=True)
 
 if not os.path.exists(DATA_PATH):
     st.info("⏳ El torneo aún no comenzó. El mapa estará disponible a partir del primer partido.")
@@ -75,20 +76,6 @@ colores = {
     "falta recibida": "#6EE7B7",
     "falta cometida": "#FCA5A5",
 }
-
-# --- Sidebar ---
-escudo_path = os.path.join(BASE, "static", "escudo.png")
-if os.path.exists(escudo_path):
-    st.sidebar.image(escudo_path, width=64)
-st.sidebar.markdown("""
-<div style='padding: 4px 0 20px 0'>
-    <div style='font-size:0.95em; font-weight:700; color:#F9FAFB; line-height:1.4'>Club Atlético<br>Estrella de Berisso</div>
-    <div style='font-size:0.68em; color:#6B7280; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
-    <div style='margin: 14px 0; height:1px; background:linear-gradient(to right, #E23E3E55, transparent)'></div>
-    <div style='font-size:0.65em; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
-    <div style='font-size:0.63em; color:#4B5563; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
-</div>
-""", unsafe_allow_html=True)
 
 # Cargar fixture para filtro de condición
 import os as _os
@@ -138,7 +125,7 @@ if num_fecha is not None:
 
 def shapes_cancha():
     s = []
-    def rect(x0, y0, x1, y1, fill="#4a7c3f", lw=1.5):
+    def rect(x0, y0, x1, y1, fill="#2D6A4F", lw=1.5):
         return dict(type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
                     fillcolor=fill, line=dict(color="white", width=lw), layer="below")
     def line(x0, y0, x1, y1, lw=1.5):
@@ -147,7 +134,7 @@ def shapes_cancha():
     def circle(x0, y0, x1, y1):
         return dict(type="circle", x0=x0, y0=y0, x1=x1, y1=y1,
                     line=dict(color="white", width=1.5), fillcolor="rgba(0,0,0,0)", layer="below")
-    s.append(rect(0, 0, W, H, fill="#4a7c3f", lw=2))
+    s.append(rect(0, 0, W, H, fill="#2D6A4F", lw=2))
     s.append(line(W/2, 0, W/2, H))
     s.append(circle(W/2-CR, H/2-CR, W/2+CR, H/2+CR))
     s.append(rect(0, (H-AG_Y)/2, AG_X, (H+AG_Y)/2))
@@ -163,7 +150,7 @@ def layout_cancha(height=600):
         height=height,
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="#4a7c3f",
+        plot_bgcolor="#2D6A4F",
         xaxis=dict(range=[-2, W+2], showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(range=[H+2, -2], showgrid=False, zeroline=False, showticklabels=False,
                    scaleanchor="x", scaleratio=0.69),
