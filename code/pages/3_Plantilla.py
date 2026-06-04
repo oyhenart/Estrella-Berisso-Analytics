@@ -10,11 +10,11 @@ from components.layout import (
     render_header
 )
 
-inject_css()
-
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FOTOS_DIR = os.path.join(BASE, "static", "fotos")
 DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
+
+inject_css()
 
 render_sidebar(BASE)
 

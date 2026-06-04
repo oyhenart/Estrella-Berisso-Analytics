@@ -83,14 +83,11 @@ for _, row in df.iterrows():
             gf = int(row["goles_favor"])
             gc = int(row["goles_contra"])
             if gf > gc:
-                resultado = f"✅ {gf} - {gc}"
+                st.success(resultado)
             elif gf == gc:
-                resultado = f"🟡 {gf} - {gc}"
+                st.warning(resultado)
             else:
-                resultado = f"❌ {gf} - {gc}"
-            st.success(resultado)
-            st.warning(resultado)
-            st.error(resultado)
+                st.error(resultado)
         else:
             st.markdown("🕐 Pendiente")
     with col4:

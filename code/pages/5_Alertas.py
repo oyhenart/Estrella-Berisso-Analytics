@@ -135,9 +135,9 @@ if not sanciones.empty:
                     [2, 4, 2]
                 )
 
-                col1.markdown(...)
-                col2.markdown(...)
-                col3.markdown(...)
+                col1.markdown(f"🟥 **{str(row['nombre']).title()}**")
+                col2.markdown(row.get("motivo", "—"))
+                col3.markdown(f"📅 Regresa: **{regreso}**")
         st.divider()
 
 # --- Lesiones activas ---
@@ -156,3 +156,4 @@ if not lesiones.empty:
 # --- Historial ---
 with st.expander("Ver historial completo"):
     st.dataframe(df, use_container_width=True, hide_index=True)
+    st.divider()
