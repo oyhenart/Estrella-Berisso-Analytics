@@ -8,6 +8,16 @@ st.set_page_config(
     layout="wide",
 )
 
+# Ocultar elementos genéricos de Streamlit
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+[data-testid="stSidebarNav"] {display: none;}
+</style>
+""", unsafe_allow_html=True)
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
 FIXTURE_PATH = os.path.join(BASE, "data", "fixture.csv")
@@ -25,27 +35,40 @@ def cargar_fixture():
 # --- Sidebar ---
 escudo_path = os.path.join(BASE, "static", "escudo.png")
 if os.path.exists(escudo_path):
-    st.sidebar.image(escudo_path, width=72)
-
+    st.sidebar.image(escudo_path, width=64)
 st.sidebar.markdown("""
-<div style='padding: 6px 0 20px 0'>
-    <div style='font-size:1.05em; font-weight:700; color:#EEEEEE; line-height:1.3'>
+<div style='padding: 4px 0 20px 0'>
+    <div style='font-size:0.95em; font-weight:700; color:#F9FAFB; line-height:1.4'>
         Club Atlético<br>Estrella de Berisso
     </div>
-    <div style='font-size:0.72em; color:#555; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
-    <div style='margin: 16px 0; height:1px; background:linear-gradient(to right, #E63946, transparent)'></div>
-    <div style='font-size:0.7em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
-    <div style='font-size:0.68em; color:#444; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
+    <div style='font-size:0.68em; color:#6B7280; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
+    <div style='margin: 14px 0; height:1px; background:linear-gradient(to right, #E23E3E55, transparent)'></div>
+    <div style='font-size:0.65em; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
+    <div style='font-size:0.63em; color:#4B5563; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
 </div>
 """, unsafe_allow_html=True)
 
+# Navegación manual en sidebar
+st.sidebar.markdown("<div style='margin-top:8px; height:1px; background:#1F2937'></div>", unsafe_allow_html=True)
+pages = {
+    "⚽ Inicio": "/",
+    "📊 Estadísticas": "/Estadisticas",
+    "🗺️ Mapa de cancha": "/Mapa_cancha",
+    "👥 Plantilla": "/Plantilla",
+    "🗓️ Fixture": "/Fixture",
+    "🚨 Alertas": "/Alertas",
+    "🎬 Videos": "/Videos",
+}
+for label, _ in pages.items():
+    st.sidebar.markdown(f"<div style='padding:6px 8px; font-size:0.85em; color:#9CA3AF'>{label}</div>", unsafe_allow_html=True)
+
 # --- Header ---
 st.markdown("""
-<div style='margin-bottom:28px'>
-    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>
+<div style='margin-bottom:24px'>
+    <p style='font-size:0.68em; font-weight:600; color:#E23E3E; text-transform:uppercase; letter-spacing:3px; margin:0 0 4px 0'>
         Torneo Promocional Amateur 2026
     </p>
-    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>
+    <h1 style='font-size:1.9em; font-weight:800; margin:0; color:#F9FAFB; letter-spacing:-0.5px'>
         Panel de análisis
     </h1>
 </div>
@@ -79,42 +102,39 @@ if condicion_sel != "Local y Visitante" and num_fecha is None:
     fechas_cond = fixture[fixture["condicion"] == condicion_sel]["fecha"].tolist()
     df_filtrado = df_filtrado[df_filtrado["fecha"].isin(fechas_cond)]
 
-st.markdown("<div style='margin:20px 0; height:1px; background:#222'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin:16px 0; height:1px; background:#1F2937'></div>", unsafe_allow_html=True)
 
-# --- Métricas ---
-total_eventos     = len(df_filtrado)
-total_jugadores   = df_filtrado["Player"].nunique()
-total_pases       = len(df_filtrado[df_filtrado["Event"] == "pase"])
+# --- KPIs compactos ---
+total_pases = len(df_filtrado[df_filtrado["Event"] == "pase"])
 total_recuperaciones = len(df_filtrado[df_filtrado["Event"] == "recuperacion"])
-total_remates     = len(df_filtrado[df_filtrado["Event"] == "remate"])
-total_goles       = len(df_filtrado[df_filtrado["Event"] == "gol"])
+total_remates = len(df_filtrado[df_filtrado["Event"] == "remate"])
+total_goles = len(df_filtrado[df_filtrado["Event"] == "gol"])
+total_perdidas = len(df_filtrado[df_filtrado["Event"] == "perdida"])
+total_jugadores = df_filtrado["Player"].nunique()
+total_eventos = len(df_filtrado)
 
-def card(label, value, highlight=False):
-    top_border = "border-top: 2px solid #E63946;" if highlight else "border-top: 2px solid #2A2A2A;"
-    val_color = "#E63946" if highlight else "#EEEEEE"
+def kpi(label, value, sub=None, highlight=False):
+    accent = "#E23E3E" if highlight else "#374151"
+    val_color = "#E23E3E" if highlight else "#F9FAFB"
+    sub_html = f"<div style='font-size:0.72em; color:#6B7280; margin-top:4px'>{sub}</div>" if sub else ""
     return f"""
-    <div style='background:#1C1C1C; {top_border} border-radius:6px; padding:18px 20px;'>
-        <div style='font-size:0.68em; color:#666; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px'>{label}</div>
-        <div style='font-size:2em; font-weight:800; color:{val_color}; letter-spacing:-0.5px'>{value}</div>
+    <div style='background:#1F2937; border-left:3px solid {accent}; border-radius:4px; padding:14px 18px;'>
+        <div style='font-size:0.62em; color:#6B7280; text-transform:uppercase; letter-spacing:2px; margin-bottom:6px'>{label}</div>
+        <div style='font-size:1.9em; font-weight:800; color:{val_color}; letter-spacing:-0.5px; line-height:1'>{value}</div>
+        {sub_html}
     </div>
     """
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
-c1.markdown(card("Eventos", total_eventos, highlight=True), unsafe_allow_html=True)
-c2.markdown(card("Jugadores", total_jugadores), unsafe_allow_html=True)
-c3.markdown(card("Pases", total_pases), unsafe_allow_html=True)
-c4.markdown(card("Recuperaciones", total_recuperaciones), unsafe_allow_html=True)
-c5.markdown(card("Remates", total_remates), unsafe_allow_html=True)
-c6.markdown(card("Goles", total_goles, highlight=total_goles > 0), unsafe_allow_html=True)
+c1, c2, c3, c4 = st.columns(4)
+c1.markdown(kpi("Eventos totales", total_eventos, sub=f"{total_jugadores} jugadores", highlight=True), unsafe_allow_html=True)
+c2.markdown(kpi("Pases", total_pases, sub=f"{total_perdidas} pérdidas registradas"), unsafe_allow_html=True)
+c3.markdown(kpi("Recuperaciones", total_recuperaciones), unsafe_allow_html=True)
+c4.markdown(kpi("Remates · Goles", f"{total_remates} · {total_goles}", highlight=total_goles > 0), unsafe_allow_html=True)
 
-st.markdown("<div style='margin:28px 0 16px 0'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin:24px 0 16px 0'></div>", unsafe_allow_html=True)
 
 # --- Tabla ---
-st.markdown("""
-<p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin-bottom:12px'>
-    Participación por jugador
-</p>
-""", unsafe_allow_html=True)
+st.markdown("<p style='font-size:0.68em; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:3px; margin-bottom:10px'>Participación por jugador</p>", unsafe_allow_html=True)
 
 resumen = df_filtrado.groupby("Player")["Event"].count().sort_values(ascending=False).reset_index()
 resumen.columns = ["Jugador", "Total eventos"]
@@ -132,6 +152,6 @@ st.dataframe(
             max_value=int(resumen["Total eventos"].max()),
             format="%d",
         ),
-        "% del total": st.column_config.TextColumn("% del total", width="small"),
+        "% del total": st.column_config.TextColumn("%", width="small"),
     }
 )

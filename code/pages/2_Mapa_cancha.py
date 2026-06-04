@@ -4,7 +4,13 @@ import numpy as np
 import plotly.graph_objects as go
 import os
 
-st.set_page_config(page_title="Mapa de cancha", page_icon="🗺️", layout="wide")
+st.set_page_config(page_title="Mapa de cancha · Estrella FC", page_icon="🗺️", layout="wide")
+
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
@@ -56,12 +62,33 @@ ARCO = 8.1;  CR   = 7.0
 
 # Colores en minúsculas
 colores = {
-    "pase": "#3498db", "recuperacion": "#2ecc71", "perdida": "#e74c3c",
-    "conduccion": "#9b59b6", "tiro libre": "#f1c40f",
-    "remate": "#e74c3c", "centro": "#1abc9c", "gol": "#ff0000",
-    "despeje": "#95a5a6", "corner": "#e67e22",
-    "falta recibida": "#00bcd4", "falta cometida": "#ff5722",
+    "pase":           "#60A5FA",
+    "recuperacion":   "#34D399",
+    "perdida":        "#F87171",
+    "conduccion":     "#A78BFA",
+    "tiro libre":     "#FCD34D",
+    "remate":         "#FB923C",
+    "centro":         "#67E8F9",
+    "gol":            "#E23E3E",
+    "despeje":        "#9CA3AF",
+    "corner":         "#F9A8D4",
+    "falta recibida": "#6EE7B7",
+    "falta cometida": "#FCA5A5",
 }
+
+# --- Sidebar ---
+escudo_path = os.path.join(BASE, "static", "escudo.png")
+if os.path.exists(escudo_path):
+    st.sidebar.image(escudo_path, width=64)
+st.sidebar.markdown("""
+<div style='padding: 4px 0 20px 0'>
+    <div style='font-size:0.95em; font-weight:700; color:#F9FAFB; line-height:1.4'>Club Atlético<br>Estrella de Berisso</div>
+    <div style='font-size:0.68em; color:#6B7280; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
+    <div style='margin: 14px 0; height:1px; background:linear-gradient(to right, #E23E3E55, transparent)'></div>
+    <div style='font-size:0.65em; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
+    <div style='font-size:0.63em; color:#4B5563; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
+</div>
+""", unsafe_allow_html=True)
 
 # Cargar fixture para filtro de condición
 import os as _os
@@ -82,7 +109,7 @@ with col3:
     jugador_sel = st.selectbox("Jugador", jugadores)
 
 eventos_disponibles = sorted(df["Event"].unique().tolist())
-eventos_sel = st.multiselect("Tipo de evento", eventos_disponibles, default=eventos_disponibles)
+eventos_sel = st.multiselect("Tipo de evento", eventos_disponibles, default=["pase"] if "pase" in eventos_disponibles else eventos_disponibles[:1])
 
 st.divider()
 

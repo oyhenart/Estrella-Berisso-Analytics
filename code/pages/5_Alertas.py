@@ -5,6 +5,12 @@ from datetime import date
 
 st.set_page_config(page_title="Alertas", page_icon="🚨", layout="wide")
 
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 @st.cache_data(ttl=0)
