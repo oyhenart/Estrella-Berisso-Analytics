@@ -4,17 +4,24 @@ import plotly.graph_objects as go
 import os
 from datetime import date
 
-st.set_page_config(page_title="Plantilla", page_icon="👥", layout="wide")
+from components.layout import (
+    inject_css,
+    render_sidebar,
+    render_header
+)
 
-st.markdown("""
-<style>
-#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
+inject_css()
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FOTOS_DIR = os.path.join(BASE, "static", "fotos")
 DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
+
+render_sidebar(BASE)
+
+render_header(
+    "Plantel",
+    "Plantilla"
+)
 
 @st.cache_data(ttl=0)
 def cargar_jugadores():
@@ -84,27 +91,6 @@ jugadores = cargar_jugadores()
 alertas = cargar_alertas()
 eventos = cargar_eventos()
 
-# --- Sidebar ---
-escudo_path = os.path.join(BASE, "static", "escudo.png")
-if os.path.exists(escudo_path):
-    st.sidebar.image(escudo_path, width=72)
-st.sidebar.markdown("""
-<div style='padding: 6px 0 20px 0'>
-    <div style='font-size:1.05em; font-weight:700; color:#EEEEEE; line-height:1.3'>Club Atlético<br>Estrella de Berisso</div>
-    <div style='font-size:0.72em; color:#555; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
-    <div style='margin: 16px 0; height:1px; background:linear-gradient(to right, #E63946, transparent)'></div>
-    <div style='font-size:0.7em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
-    <div style='font-size:0.68em; color:#444; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div style='margin-bottom:28px'>
-    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>Plantel</p>
-    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>Plantilla</h1>
-</div>
-""", unsafe_allow_html=True)
-
 # --- Tabs ---
 tab1, tab2 = st.tabs(["📋 Plantel", "⚖️ Comparar jugadores"])
 
@@ -148,9 +134,9 @@ with tab1:
                 st.markdown(f"""
                 <div style='text-align:center; padding: 4px 0'>
                     <span style='font-size:1.3em; font-weight:700'>#{int(row['camiseta'])} {row['nombre']}</span><br>
-                    <span style='font-size:0.85em; color:#aaa'>{row['posicion']}</span><br>
+                    <span style='font-size:0.85em; color:#9CA3AF'>{row['posicion']}</span><br>
                     <span style='font-size:1em'>{icono} {estado_txt}</span><br>
-                    <span style='font-size:0.8em; color:#ccc'>
+                    <span style='font-size:0.8em; color:#D1D5DB'>
                         🎮 {stats['partidos']} partidos &nbsp;|&nbsp; ⏱️ {stats['minutos']} min<br>
                         ⚽ {stats['pases']} pases &nbsp;|&nbsp; 💪 {stats['recuperaciones']} recup.<br>
                         🎯 {stats['remates']} remates
@@ -197,7 +183,13 @@ with tab2:
         # Radar chart
         st.subheader("Radar de rendimiento")
         fig = go.Figure()
-        colores_radar = ["#3498db","#2ecc71","#e74c3c","#f1c40f","#9b59b6"]
+        colores_radar = [
+            "#E23E3E",
+            "#60A5FA",
+            "#34D399",
+            "#FBBF24",
+            "#A78BFA"
+        ]
 
         for idx, nombre in enumerate(seleccionados):
             s = stats_todos[nombre]
