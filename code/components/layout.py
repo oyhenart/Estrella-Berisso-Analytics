@@ -7,8 +7,8 @@ def inject_css():
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
     [data-testid="stSidebarNav"] {display: none;}
+    
     section[data-testid="stSidebar"] {
         background-color: #111827;
         border-right: 1px solid #1F2937;
