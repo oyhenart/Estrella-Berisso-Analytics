@@ -3,15 +3,23 @@ import pandas as pd
 import os
 from datetime import date
 
+from components.layout import (
+    inject_css,
+    render_sidebar,
+    render_header
+)
+
 st.set_page_config(page_title="Alertas", page_icon="🚨", layout="wide")
 
-st.markdown("""
-<style>
-#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
+inject_css()
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+render_sidebar(BASE)
+
+render_header(
+    "Plantel",
+    "Alertas"
+)
 
 @st.cache_data(ttl=0)
 def cargar_alertas():
@@ -31,26 +39,7 @@ def umbral_suspension(sanciones_cumplidas):
     else:
         return 2
 
-# --- Sidebar ---
-escudo_path = os.path.join(BASE, "static", "escudo.png")
-if os.path.exists(escudo_path):
-    st.sidebar.image(escudo_path, width=72)
-st.sidebar.markdown("""
-<div style='padding: 6px 0 20px 0'>
-    <div style='font-size:1.05em; font-weight:700; color:#EEEEEE; line-height:1.3'>Club Atlético<br>Estrella de Berisso</div>
-    <div style='font-size:0.72em; color:#555; text-transform:uppercase; letter-spacing:2px; margin-top:3px'>La Cebra</div>
-    <div style='margin: 16px 0; height:1px; background:linear-gradient(to right, #E63946, transparent)'></div>
-    <div style='font-size:0.7em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:2px'>IAO Football Analytics</div>
-    <div style='font-size:0.68em; color:#444; margin-top:4px; font-style:italic'>Transformo datos en decisiones.</div>
-</div>
-""", unsafe_allow_html=True)
 
-st.markdown("""
-<div style='margin-bottom:28px'>
-    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>Plantel</p>
-    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>Alertas</h1>
-</div>
-""", unsafe_allow_html=True)
 
 df = cargar_alertas()
 
@@ -112,7 +101,25 @@ if not amarillas.empty:
         })
 
     df_resumen = pd.DataFrame(resumen).sort_values("Amarillas en ciclo", ascending=False)
-    st.dataframe(df_resumen, use_container_width=True, hide_index=True)
+    st.dataframe(
+        df_resumen,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Amarillas totales":
+                st.column_config.ProgressColumn(
+                    "Amarillas totales",
+                    min_value=0,
+                    max_value=10
+                ),
+            "Amarillas en ciclo":
+                st.column_config.ProgressColumn(
+                    "Amarillas en ciclo",
+                    min_value=0,
+                    max_value=5
+                )
+        }
+    )
     st.divider()
 
 # --- Sanciones activas ---
@@ -122,10 +129,15 @@ if not sanciones.empty:
         st.subheader("🟥 Sancionados")
         for _, row in activas.iterrows():
             regreso = row["fecha_regreso"].strftime("%d/%m/%Y") if pd.notna(row["fecha_regreso"]) else "Sin fecha definida"
-            col1, col2, col3 = st.columns([2, 4, 2])
-            col1.markdown(f"🟥 **{str(row['nombre']).title()}**")
-            col2.markdown(row["motivo"])
-            col3.markdown(f"📅 Regresa: **{regreso}**")
+            with st.container(border=True):
+
+                col1, col2, col3 = st.columns(
+                    [2, 4, 2]
+                )
+
+                col1.markdown(...)
+                col2.markdown(...)
+                col3.markdown(...)
         st.divider()
 
 # --- Lesiones activas ---
