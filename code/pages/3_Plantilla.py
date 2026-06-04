@@ -156,9 +156,9 @@ with tab1:
                     <span style='font-size:0.85em;color:#9CA3AF'>{row['posicion']}</span><br>
                     <span style='font-size:1em'>{icono} {estado_txt}</span><br>
                     <span style='font-size:0.8em;color:#D1D5DB'>
-                        🎮 {stats['partidos']} partidos &nbsp;|&nbsp; ⏱️ {stats['minutos']} min<br>
-                        ⚽ {stats['pases']} pases &nbsp;|&nbsp; 💪 {stats['recuperaciones']} recup.<br>
-                        🎯 {stats['remates']} remates
+                        {stats['partidos']} partidos &nbsp;|&nbsp; {stats['minutos']} min<br>
+                        {stats['pases']} pases &nbsp;|&nbsp; {stats['recuperaciones']} recup.<br>
+                        {stats['remates']} remates
                     </span>
                 </div>
                 """, unsafe_allow_html=True)
@@ -166,7 +166,7 @@ with tab1:
 
 # ── Tab 2: Comparador ─────────────────────────────────────────────────────────
 with tab2:
-    st.subheader("⚖️ Comparador de jugadores")
+    st.subheader("Comparador de jugadores")
 
     nombres      = sorted(jugadores["nombre"].tolist())
     seleccionados = st.multiselect(
