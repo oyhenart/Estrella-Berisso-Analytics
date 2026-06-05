@@ -24,7 +24,7 @@ Este repositorio es de **carácter público** con fines de documentación profes
 
 ## 📋 Sobre este repositorio
 
-Este repositorio documenta mi trabajo como **Analista de Datos y Video Analista** en el Club Atlético Estrella de Berisso, comenzando en las divisiones juveniles y con proyección al primer equipo en el **Torneo Promocional Amateur 2026**.
+Este repositorio documenta mi trabajo como **Analista de Datos y Video Analista** en el Club Atlético Estrella de Berisso, comenzando en el primer equipo en el **Torneo Promocional Amateur 2026**.
 
 El enfoque no es solo analizar lo que sucede en el campo, sino construir **sistemas de reportería reproducibles** que transformen datos y video en inteligencia táctica accionable para el cuerpo técnico.
 
@@ -35,19 +35,27 @@ El enfoque no es solo analizar lo que sucede en el campo, sino construir **siste
 ```
 code/                             # 🔄 Torneo Promocional Amateur 2026
     ├── app.py                        # Punto de entrada del dashboard
+    ├── requirements.txt
+    ├── components/
+    │   └── layout.py
+    ├── .streamlit/
+    │   └── config.toml
     ├── data/
     │   ├── events_clean.csv          # Eventos por partido (generado post-partido)
     │   ├── Jugadores.csv             # Plantilla del equipo
     │   ├── fixture.csv               # Fixture y resultados
-    │   └── sanciones_lesiones.csv    # Bajas por sanción o lesión
+    │   ├── sanciones_lesiones.csv    # Bajas por sanción o lesión
+    │   └── videos.csv                # Recortes del juego
     ├── static/
+    │   ├── escudo.png
     │   └── fotos/                    # Fotos de jugadores
     └── pages/
         ├── 1_Estadisticas.py         # Estadísticas por jugador
         ├── 2_Mapa_Cancha.py          # Mapa de eventos + heatmap
         ├── 3_Plantilla.py            # Tarjetas de jugadores
         ├── 4_Fixture.py              # Fixture y resultados
-        └── 5_Alertas.py              # Sanciones y lesiones
+        ├── 5_Alertas.py              # Sanciones y lesiones
+        └── 6_Videos.py               # Recortes de videos
 ```
 
 ---
@@ -70,12 +78,13 @@ Video (LongoMatch) → Carga manual FCPython → Python ETL → Dashboard Stream
 
 | Página | Descripción |
 |---|---|
-| 🏠 Inicio | Métricas generales del partido |
-| 📊 Estadísticas | Eventos por jugador, participación y actividad por minuto |
-| 🗺️ Mapa de cancha | Posicionamiento, líneas de pase y heatmap por zonas |
-| 👥 Plantilla | Tarjetas de jugadores con foto, número y posición |
-| 🗓️ Fixture | Resultados y próximos partidos del Torneo Promocional |
-| 🚨 Alertas | Sanciones y lesiones con fecha de regreso |
+| Inicio | Métricas generales del partido |
+| Estadísticas | Eventos por jugador, participación y actividad por minuto |
+| Mapa de cancha | Posicionamiento, líneas de pase y heatmap por zonas |
+| Plantilla | Tarjetas de jugadores con foto, número y posición |
+| Fixture | Resultados y próximos partidos del Torneo Promocional |
+| Alertas | Sanciones y lesiones con fecha de regreso |
+| Videos | Recortes de videos |
 
 #### Cómo correr el dashboard localmente
 
@@ -103,16 +112,6 @@ streamlit run app.py
 ### Video y reportería
 [![LongoMatch](https://img.shields.io/badge/LongoMatch-2E7D32?style=for-the-badge&logo=play&logoColor=white)](https://longomatch.com)
 [![FCPython](https://img.shields.io/badge/FCPython-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://fcpython.com)
-
----
-
-## 🔄 Próximos pasos
-
-- [x] Dashboard Streamlit con 6 páginas deployado en Streamlit Cloud
-- [x] Fixture del Torneo Promocional Amateur 2026 cargado
-- [x] Plantilla del equipo con fotos
-- [ ] Estadísticas y mapas una vez iniciado el torneo
-- [ ] Alertas de sanciones y lesiones en temporada
 
 ---
 
