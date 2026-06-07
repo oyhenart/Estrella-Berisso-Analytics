@@ -37,11 +37,18 @@ DATA_PATH = os.path.join(
     "events_clean.csv"
 )
 
+FIXTURE_PATH = os.path.join(
+    BASE,
+    "data",
+    "fixture.csv"
+)
+
 @st.cache_data
 def cargar_datos():
     df = pd.read_csv(DATA_PATH)
     df["tiempo_total"] = df["Mins"] * 60 + df["Secs"]
-    # Armar df_pases desde X2/Y2 del nuevo formato
+    
+    # Armar df_pases desde X2/Y2
     pases = df[df["Event"] == "pase"].copy()
     pases = pases.rename(columns={
         "Player": "jugador_origen", "X": "x_origen", "Y": "y_origen",
@@ -57,18 +64,21 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-if not os.path.exists(DATA_PATH):
-    st.info("⏳ El torneo aún no comenzó. El mapa estará disponible a partir del primer partido.")
+# Validación de existencia de archivos
+if not os.path.exists(DATA_PATH) or not os.path.exists(FIXTURE_PATH):
+    st.info("⏳ El torneo aún no comenzó o faltan archivos de datos. El mapa estará disponible a partir del primer partido.")
     st.stop()
 
+# Carga de datos única
 df, df_pases = cargar_datos()
+fixture = pd.read_csv(FIXTURE_PATH)
 
 W, H = 100, 100
 AG_X = 12.7; AG_Y = 44.8
 AC_X = 4.2;  AC_Y = 20.4
 ARCO = 8.1;  CR   = 7.0
 
-# Colores en minúsculas
+# Colores en minúsculas (corregido abajo en el loop)
 colores = {
     "pase":           "#60A5FA",
     "recuperacion":   "#34D399",
@@ -83,34 +93,6 @@ colores = {
     "falta recibida": "#6EE7B7",
     "falta cometida": "#FCA5A5",
 }
-
-# Cargar fixture para filtro de condición
-import os as _os
-_fixture_path = _os.path.join(BASE, "data", "fixture.csv")
-import pandas as _pd
-fixture = _pd.read_csv(_fixture_path)
-
-    pases = df[df["Event"] == "pase"].copy()
-    pases = pases.rename(columns={
-        "Player": "jugador_origen",
-        "X": "x_origen", "Y": "y_origen",
-        "X2": "x_destino", "Y2": "y_destino",
-        "Mins": "mins", "Secs": "secs"
-    })
-    df_pases = (
-        pases[["jugador_origen", "x_origen", "y_origen",
-               "x_destino", "y_destino", "mins", "secs", "fecha"]]
-        .dropna(subset=["x_destino", "y_destino"])
-    )
-    return df, df_pases
-
-
-if not os.path.exists(DATA_PATH):
-    st.info("⏳ El torneo aún no comenzó. El mapa estará disponible a partir del primer partido.")
-    st.stop()
-
-df, df_pases = cargar_datos()
-fixture = pd.read_csv(FIXTURE_PATH)
 
 # ── Filtros ────────────────────────────────────────────────────────────────────
 
@@ -171,6 +153,7 @@ def shapes_cancha():
     def circle(x0, y0, x1, y1):
         return dict(type="circle", x0=x0, y0=y0, x1=x1, y1=y1,
                     line=dict(color="white", width=1.5), fillcolor="rgba(0,0,0,0)", layer="below")
+    
     s.append(rect(0, 0, W, H, fill="#2D6A4F", lw=2))
     s.append(line(W/2, 0, W/2, H))
     s.append(circle(W/2-CR, H/2-CR, W/2+CR, H/2+CR))
@@ -181,7 +164,6 @@ def shapes_cancha():
     s.append(rect(W-AC_X, (H-AC_Y)/2, W, (H+AC_Y)/2))
     s.append(line(W, (H-ARCO)/2, W, (H+ARCO)/2, lw=5))
     return s
-
 
 def layout_cancha(height=600):
     return dict(
@@ -222,7 +204,7 @@ for evento in eventos_sel:
         x=subset["X"], y=subset["Y"],
         mode="markers", name=evento,
         marker=dict(
-            color=COLORES.get(evento, "#ffffff"),
+            color=colores.get(evento, "#ffffff"),  # Corregido: 'colores' en minúscula
             size=9, opacity=0.9,
             line=dict(color="white", width=0.8)
         ),
@@ -244,33 +226,36 @@ st.divider()
 
 st.subheader("Zonas de mayor actividad")
 
-nx, ny = 13, 9
-xs = np.linspace(0, W, nx + 1)
-ys = np.linspace(0, H, ny + 1)
+if not df_filtrado.empty:
+    nx, ny = 13, 9
+    xs = np.linspace(0, W, nx + 1)
+    ys = np.linspace(0, H, ny + 1)
 
-grid = np.zeros((ny, nx))
-for _, row in df_filtrado.iterrows():
-    xi = min(int(row["X"] / W * nx), nx - 1)
-    yi = min(int(row["Y"] / H * ny), ny - 1)
-    grid[yi, xi] += 1
+    grid = np.zeros((ny, nx))
+    for _, row in df_filtrado.iterrows():
+        xi = min(int(row["X"] / W * nx), nx - 1)
+        yi = min(int(row["Y"] / H * ny), ny - 1)
+        grid[yi, xi] += 1
 
-x_centers = [(xs[i] + xs[i + 1]) / 2 for i in range(nx)]
-y_centers  = [(ys[i] + ys[i + 1]) / 2 for i in range(ny)]
+    x_centers = [(xs[i] + xs[i + 1]) / 2 for i in range(nx)]
+    y_centers  = [(ys[i] + ys[i + 1]) / 2 for i in range(ny)]
 
-fig2 = go.Figure()
-fig2.add_trace(go.Heatmap(
-    z=grid, x=x_centers, y=y_centers,
-    colorscale=[
-        [0.00, "rgba(0,0,0,0)"],
-        [0.01, "rgba(255,255,0,0.5)"],
-        [0.50, "rgba(255,140,0,0.75)"],
-        [1.00, "rgba(200,0,0,0.85)"],
-    ],
-    showscale=False,
-    hovertemplate="Eventos: %{z}<extra></extra>",
-    zmin=0, xgap=1, ygap=1,
-))
-layout2 = layout_cancha(500)
-layout2.pop("legend", None)
-fig2.update_layout(**layout2)
-st.plotly_chart(fig2, use_container_width=True)
+    fig2 = go.Figure()
+    fig2.add_trace(go.Heatmap(
+        z=grid, x=x_centers, y=y_centers,
+        colorscale=[
+            [0.00, "rgba(0,0,0,0)"],
+            [0.01, "rgba(255,255,0,0.5)"],
+            [0.50, "rgba(255,140,0,0.75)"],
+            [1.00, "rgba(200,0,0,0.85)"],
+        ],
+        showscale=False,
+        hovertemplate="Eventos: %{z}<extra></extra>",
+        zmin=0, xgap=1, ygap=1,
+    ))
+    layout2 = layout_cancha(500)
+    layout2.pop("legend", None)
+    fig2.update_layout(**layout2)
+    st.plotly_chart(fig2, use_container_width=True)
+else:
+    st.info("No hay eventos que coincidan con los filtros seleccionados para generar el mapa de calor.")
