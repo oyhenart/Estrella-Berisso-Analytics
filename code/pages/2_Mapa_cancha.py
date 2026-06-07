@@ -4,30 +4,72 @@ import numpy as np
 import plotly.graph_objects as go
 import os
 
-from components.layout import inject_css, render_sidebar, render_header
+from components.layout import (
+    inject_css,
+    render_sidebar,
+    render_header
+)
 
 st.set_page_config(
-    page_title="Mapa de cancha · Estrella FC",
+    page_title="Mapa de cancha",
     page_icon="🗺️",
     layout="wide"
 )
 
 inject_css()
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
+
 render_sidebar(BASE)
-render_header("Análisis", "Mapa de eventos en cancha")
 
-DATA_PATH    = os.path.join(BASE, "data", "events_clean.csv")
-FIXTURE_PATH = os.path.join(BASE, "data", "fixture.csv")
+render_header(
+    "Análisis",
+    "Mapa de eventos en cancha"
+)
 
-# Dimensiones de cancha (coordenadas FCPython: 0-100 x 0-100)
-W, H   = 100, 100
-AG_X   = 12.7;  AG_Y = 44.8   # área grande
-AC_X   = 4.2;   AC_Y = 20.4   # área chica
-ARCO   = 8.1;   CR   = 7.0    # arco y círculo central
+DATA_PATH = os.path.join(
+    BASE,
+    "data",
+    "events_clean.csv"
+)
 
-COLORES = {
+@st.cache_data
+def cargar_datos():
+    df = pd.read_csv(DATA_PATH)
+    df["tiempo_total"] = df["Mins"] * 60 + df["Secs"]
+    # Armar df_pases desde X2/Y2 del nuevo formato
+    pases = df[df["Event"] == "pase"].copy()
+    pases = pases.rename(columns={
+        "Player": "jugador_origen", "X": "x_origen", "Y": "y_origen",
+        "X2": "x_destino", "Y2": "y_destino", "Mins": "mins", "Secs": "secs"
+    })
+    df_pases = pases[["jugador_origen","x_origen","y_origen","x_destino","y_destino","mins","secs","fecha"]].dropna(subset=["x_destino","y_destino"])
+    return df, df_pases
+
+st.markdown("""
+<div style='margin-bottom:28px'>
+    <p style='font-size:0.72em; font-weight:600; color:#E63946; text-transform:uppercase; letter-spacing:3px; margin:0 0 6px 0'>Análisis</p>
+    <h1 style='font-size:2em; font-weight:800; margin:0; color:#EEEEEE; letter-spacing:-0.5px'>Mapa de eventos en cancha</h1>
+</div>
+""", unsafe_allow_html=True)
+
+if not os.path.exists(DATA_PATH):
+    st.info("⏳ El torneo aún no comenzó. El mapa estará disponible a partir del primer partido.")
+    st.stop()
+
+df, df_pases = cargar_datos()
+
+W, H = 100, 100
+AG_X = 12.7; AG_Y = 44.8
+AC_X = 4.2;  AC_Y = 20.4
+ARCO = 8.1;  CR   = 7.0
+
+# Colores en minúsculas
+colores = {
     "pase":           "#60A5FA",
     "recuperacion":   "#34D399",
     "perdida":        "#F87171",
@@ -42,11 +84,11 @@ COLORES = {
     "falta cometida": "#FCA5A5",
 }
 
-
-@st.cache_data
-def cargar_datos():
-    df = pd.read_csv(DATA_PATH)
-    df["tiempo_total"] = df["Mins"] * 60 + df["Secs"]
+# Cargar fixture para filtro de condición
+import os as _os
+_fixture_path = _os.path.join(BASE, "data", "fixture.csv")
+import pandas as _pd
+fixture = _pd.read_csv(_fixture_path)
 
     pases = df[df["Event"] == "pase"].copy()
     pases = pases.rename(columns={
@@ -118,7 +160,6 @@ if num_fecha is not None and "fecha" in df_pases_f.columns:
 
 def shapes_cancha():
     s = []
-
     def rect(x0, y0, x1, y1, fill="#2D6A4F", lw=1.5):
         return dict(type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
                     fillcolor=fill, line=dict(color="white", width=lw), layer="below")
@@ -129,20 +170,16 @@ def shapes_cancha():
 
     def circle(x0, y0, x1, y1):
         return dict(type="circle", x0=x0, y0=y0, x1=x1, y1=y1,
-                    line=dict(color="white", width=1.5),
-                    fillcolor="rgba(0,0,0,0)", layer="below")
-
+                    line=dict(color="white", width=1.5), fillcolor="rgba(0,0,0,0)", layer="below")
     s.append(rect(0, 0, W, H, fill="#2D6A4F", lw=2))
-    s.append(line(W / 2, 0, W / 2, H))
-    s.append(circle(W / 2 - CR, H / 2 - CR, W / 2 + CR, H / 2 + CR))
-    # Área izquierda
-    s.append(rect(0, (H - AG_Y) / 2, AG_X, (H + AG_Y) / 2))
-    s.append(rect(0, (H - AC_Y) / 2, AC_X, (H + AC_Y) / 2))
-    s.append(line(0, (H - ARCO) / 2, 0, (H + ARCO) / 2, lw=5))
-    # Área derecha
-    s.append(rect(W - AG_X, (H - AG_Y) / 2, W, (H + AG_Y) / 2))
-    s.append(rect(W - AC_X, (H - AC_Y) / 2, W, (H + AC_Y) / 2))
-    s.append(line(W, (H - ARCO) / 2, W, (H + ARCO) / 2, lw=5))
+    s.append(line(W/2, 0, W/2, H))
+    s.append(circle(W/2-CR, H/2-CR, W/2+CR, H/2+CR))
+    s.append(rect(0, (H-AG_Y)/2, AG_X, (H+AG_Y)/2))
+    s.append(rect(0, (H-AC_Y)/2, AC_X, (H+AC_Y)/2))
+    s.append(line(0, (H-ARCO)/2, 0, (H+ARCO)/2, lw=5))
+    s.append(rect(W-AG_X, (H-AG_Y)/2, W, (H+AG_Y)/2))
+    s.append(rect(W-AC_X, (H-AC_Y)/2, W, (H+AC_Y)/2))
+    s.append(line(W, (H-ARCO)/2, W, (H+ARCO)/2, lw=5))
     return s
 
 
@@ -152,8 +189,8 @@ def layout_cancha(height=600):
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="#2D6A4F",
-        xaxis=dict(range=[-2, W + 2], showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(range=[H + 2, -2], showgrid=False, zeroline=False, showticklabels=False,
+        xaxis=dict(range=[-2, W+2], showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(range=[H+2, -2], showgrid=False, zeroline=False, showticklabels=False,
                    scaleanchor="x", scaleratio=0.69),
         shapes=shapes_cancha(),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
