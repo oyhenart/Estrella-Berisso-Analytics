@@ -19,11 +19,10 @@ render_header(
     "Multimedia",
     "Videos del equipo"
 )
+
 @st.cache_data(ttl=0)
 def cargar_videos():
     return pd.read_csv(os.path.join(BASE, "data", "videos.csv"))
-
-
 
 df = cargar_videos()
 
@@ -31,8 +30,12 @@ if df.empty:
     st.info("⏳ Aún no hay videos cargados. Se irán agregando partido a partido.")
     st.stop()
 
-# --- Filtro por fecha ---
-fechas = ["Todas"] + sorted(df["fecha"].unique().tolist(), key=lambda x: int(x))
+# Ordenamos el DataFrame completo por fecha de manera descendente (Última primero)
+df = df.sort_values(by="fecha", ascending=False)
+
+# --- Filtro por fecha (Orden descendente con reverse=True) ---
+fechas_unicas = sorted(df["fecha"].unique().tolist(), key=lambda x: int(x), reverse=True)
+fechas = ["Todas"] + [str(f) for f in fechas_unicas]
 fecha_sel = st.selectbox("Filtrar por fecha", fechas)
 
 if fecha_sel != "Todas":
@@ -40,7 +43,7 @@ if fecha_sel != "Todas":
 
 st.divider()
 
-# --- Videos ---
+# --- Videos (Ya van a salir ordenados de última a primera fecha) ---
 for _, row in df.iterrows():
 
     with st.container(border=True):
