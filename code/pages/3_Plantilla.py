@@ -75,44 +75,36 @@ def stats_jugador(nombre, eventos):
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
-    
-    j = eventos[eventos["Player"].str.lower() == nombre.lower()]
+
+    j = eventos[eventos["Player"].str.lower() == nombre.lower()].copy()
     if j.empty:
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
-        
+
     partidos = j["fecha"].nunique()
-    
-    # Asegurar formato numérico
-    j["tiempo_total"] = pd.to_numeric(j["tiempo_total"], errors="coerce")
-    eventos["tiempo_total"] = pd.to_numeric(eventos["tiempo_total"], errors="coerce")
-    
+
+    eventos = eventos.copy()
+    eventos["Mins"] = pd.to_numeric(eventos["Mins"], errors="coerce")
+    j["Mins"]       = pd.to_numeric(j["Mins"], errors="coerce")
+
     minutos_totales = 0
-    
-    #  PROCESAMOS CADA FECHA DE FORMA INDEPENDIENTE
+
     for f in j["fecha"].unique():
-        # Filtramos el partido completo de esa fecha y los eventos del jugador en esa fecha
         eventos_partido_fecha = eventos[eventos["fecha"] == f]
         eventos_jugador_fecha = j[j["fecha"] == f]
-        
-        # Último minuto real registrado de ESTE partido en específico
-        final_del_partido = int(eventos_partido_fecha["tiempo_total"].max())
-        
-        # Tu criterio empírico: Primera acción del jugador en ESTE partido
-        primer_evento_jugador = int(eventos_jugador_fecha["tiempo_total"].min())
-        
-        # Si es titular en esa fecha (acción en los primeros 15 min), sumamos el partido entero
+
+        final_del_partido     = int(eventos_partido_fecha["Mins"].max())
+        primer_evento_jugador = int(eventos_jugador_fecha["Mins"].min())
+
         if primer_evento_jugador <= 15:
             minutos_partido = final_del_partido
         else:
-            # Si entró de cambio, cuenta desde su primer toque de esa fecha hasta el final de esa fecha
             minutos_partido = int(final_del_partido - primer_evento_jugador + 1)
-            
+
         if minutos_partido <= 0:
             minutos_partido = 1
-            
-        # Acumulamos los minutos de este partido al total histórico del jugador
+
         minutos_totales += minutos_partido
 
     return {
