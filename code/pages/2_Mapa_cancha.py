@@ -183,58 +183,54 @@ def layout_cancha(height=600):
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(color="white")),
     )
 
-# ── GRÁFICO 1: MAPA GENERAL DE EVENTOS (CON MULTISELECT REPARADO) ──────────────
+# ── GRÁFICO 1: MAPA GENERAL DE EVENTOS (CON FLECHAS REPARADAS) ──────────────
 st.subheader("Ubicación de eventos en campo de juego")
 
 fig = go.Figure()
 
-# 1. Si "pase" está seleccionado, vectorizamos las trayectorias dirigidas
+# 1. Si "pase" está seleccionado en el multiselect, dibujamos vectores dirigidos
 if "pase" in eventos_sel and not df_pases_f.empty:
     correctos = df_pases_f[df_pases_f["resultado"] == 1]
     incorrectos = df_pases_f[df_pases_f["resultado"] == 0]
     
-    def graficar_lineas_y_conos(df_sub, color, nombre):
-        if df_sub.empty: return
-        # Trazado de líneas limpias
-        x_lines, y_lines = [], []
-        for _, row in df_sub.iterrows():
-            x_lines.extend([row["x_origen"], row["x_destino"], None])
-            y_lines.extend([row["y_origen"], row["y_destino"], None])
-            
+    def graficar_pases_con_flechas(df_sub, color, nombre):
+        if df_sub.empty: 
+            return
+        
+        # Agrupamos un scatter invisible para la leyenda y el hover coordinado
         fig.add_trace(go.Scatter(
-            x=x_lines, y=y_lines, mode="lines",
-            line=dict(color=color, width=1.5), name=nombre, legendgroup=nombre
+            x=df_sub["x_origen"], 
+            y=df_sub["y_origen"],
+            mode="markers",
+            marker=dict(size=0, opacity=0), # Invisible, solo para activar el hover y la leyenda
+            name=nombre,
+            legendgroup=nombre
         ))
         
-        # Puntas de flecha orientadas con go.Cone
-        x_dest, y_dest = df_sub["x_destino"].tolist(), df_sub["y_destino"].tolist()
-        u_dir = (df_sub["x_destino"] - df_sub["x_origen"]).tolist()
-        v_dir = (df_sub["y_destino"] - df_sub["y_origen"]).tolist()
-        
-        # Normalización manual de vectores para evitar deformaciones ópticas
-        for i in range(len(u_dir)):
-            norm = np.sqrt(u_dir[i]**2 + v_dir[i]**2)
-            if norm > 0:
-                u_dir[i] /= norm
-                v_dir[i] /= norm
+        # Dibujamos cada pase individualmente como una flecha nativa de Plotly
+        for _, row in df_sub.iterrows():
+            fig.add_annotation(
+                x=row["x_destino"],
+                y=row["y_destino"],
+                ax=row["x_origen"],
+                ay=row["y_origen"],
+                xref="x", yref="y",
+                axref="x", ayref="y",
+                showarrow=True,
+                arrowhead=2,    # Tipo de punta de flecha estilizada
+                arrowsize=1.2,  # Tamaño de la punta
+                arrowwidth=1.5, # Grosor de la línea
+                arrowcolor=color,
+                opacity=0.75
+            )
 
-        fig.add_trace(go.Cone(
-            x=x_dest, y=y_dest, z=[0]*len(x_dest),
-            u=u_dir, v=v_dir, w=[0]*len(x_dest),
-            colorscale=[[0, color], [1, color]], showscale=False,
-            sizemode="absolute", sizeref=2.5,
-            legendgroup=nombre, showlegend=False,
-            text=df_sub["jugador_origen"],
-            hovertemplate="Pase de: %{text}<extra></extra>"
-        ))
+    graficar_pases_con_flechas(correctos, colores["pase_correcto"], "Pase Completado")
+    graficar_pases_con_flechas(incorrectos, colores["pase_incorrecto"], "Pase Errado")
 
-    graficar_lineas_y_conos(correctos, colores["pase_correcto"], "Pase Completado")
-    graficar_lineas_y_conos(incorrectos, colores["pase_incorrecto"], "Pase Errado")
-
-# 2. Representación de todos los demás eventos del multiselect como puntos claros
+# 2. Representación de todos los demás eventos seleccionados (recuperaciones, pérdidas, etc.)
 for evento in eventos_sel:
     if evento == "pase":
-        continue # Nos saltamos el pase común porque ya lo vectorizamos arriba de forma avanzada
+        continue # El pase ya lo vectorizamos arriba de forma avanzada
         
     subset = df_filtrado[df_filtrado["Event"] == evento]
     if subset.empty:
@@ -256,81 +252,69 @@ for evento in eventos_sel:
         ),
     ))
 
-fig.update_layout(**layout_cancha(600))
+# Forzamos los rangos exactos de la cancha para que nada se vaya de eje
+layout_actualizado = layout_cancha(600)
+layout_actualizado["xaxis"]["range"] = [-2, 102]
+layout_actualizado["yaxis"]["range"] = [102, -2] # Mantiene el origen 0,0 arriba o abajo según tu convención
+
+fig.update_layout(**layout_actualizado)
 st.plotly_chart(fig, use_container_width=True)
 
 
-# ── GRÁFICO 2: RED DE PASES COLECTIVA (ESTRUCTURAL) ───────────────────────────
+# ── GRÁFICO 2: RED DE PASES COLECTIVA (REPARADA) ───────────────────────────
 st.divider()
 st.subheader("Estructura de la Red de Pases Colectiva")
 
 if fecha_sel == "Todos los partidos":
     st.info("💡 Consejo táctico: Elegí una Fecha puntual en los filtros superiores para examinar la red de pases exacta de una alineación.")
 
+# Usamos solo pases correctos para la red estructural
 df_red = df_pases_f[df_pases_f["resultado"] == 1].copy()
 
 if len(df_red) > 5:
+    # Calculamos posiciones medias de los jugadores en la cancha
     pos_media = df_red.groupby("jugador_origen")[["x_origen", "y_origen"]].mean().reset_index()
     cant_pases = df_red.groupby("jugador_origen").size().reset_index(name="cantidad")
     pos_media = pos_media.merge(cant_pases, on="jugador_origen")
     
+    # Agrupamos las sociedades entre jugadores
     conexiones = df_red.groupby(["jugador_origen", "jugador_destino"]).size().reset_index(name="frecuencia")
-    conexiones = conexiones[conexiones["frecuencia"] >= 2] # Filtro de frecuencia para evitar contaminación visual
+    conexiones = conexiones[conexiones["frecuencia"] >= 2] # Filtro mínimo de conexiones
 
     fig_red = go.Figure()
 
+    # Trazamos los enlaces de la red (Sociedades)
     for _, fila in conexiones.iterrows():
         orig = pos_media[pos_media["jugador_origen"] == fila["jugador_origen"]]
         dest = pos_media[pos_media["jugador_origen"] == fila["jugador_destino"]]
+        
         if not orig.empty and not dest.empty:
             fig_red.add_trace(go.Scatter(
                 x=[orig["x_origen"].values[0], dest["x_origen"].values[0]],
                 y=[orig["y_origen"].values[0], dest["y_origen"].values[0]],
                 mode="lines",
-                line=dict(color="rgba(252, 211, 77, 0.45)", width=fila["frecuencia"] * 1.3),
-                hoverinfo="skip", showlegend=False
+                line=dict(color="rgba(252, 211, 77, 0.6)", width=min(fila["frecuencia"] * 1.5, 8)),
+                hoverinfo="skip", 
+                showlegend=False
             ))
 
+    # Trazamos los nodos (Los jugadores)
     fig_red.add_trace(go.Scatter(
-        x=pos_media["x_origen"], y=pos_media["y_origen"],
+        x=pos_media["x_origen"], 
+        y=pos_media["y_origen"],
         mode="markers+text",
-        marker=dict(color="white", size=pos_media["cantidad"] * 0.5 + 12, line=dict(color="#1B4332", width=2)),
-        text=pos_media["jugador_origen"], textposition="top center",
-        textfont=dict(color="white", size=10, family="Arial Black"),
+        marker=dict(
+            color="white", 
+            size=np.clip(pos_media["cantidad"] * 0.4 + 12, 12, 30), # Limita tamaños máximos
+            line=dict(color="#1B4332", width=2)
+        ),
+        text=pos_media["jugador_origen"], 
+        textposition="top center",
+        textfont=dict(color="white", size=11, family="Arial Black"),
         name="Posición Media"
     ))
-    fig_red.update_layout(**layout_cancha(600))
+    
+    fig_red.update_layout(**layout_actualizado)
     st.plotly_chart(fig_red, use_container_width=True)
 else:
     st.info("No hay suficiente volumen de pases completados con receptor identificado para trazar el mapa de red estructural.")
-
-
-# ── GRÁFICO 3: HEATMAP DE ACTIVIDAD ───────────────────────────────────────────
-st.divider()
-st.subheader("Zonas de mayor densidad de acciones")
-
-if not df_filtrado.empty:
-    nx, ny = 13, 9
-    grid = np.zeros((ny, nx))
-    for _, row in df_filtrado.iterrows():
-        xi = min(int(row["X"] / W * nx), nx - 1)
-        yi = min(int(row["Y"] / H * ny), ny - 1)
-        grid[yi, xi] += 1
-
-    fig2 = go.Figure(data=go.Heatmap(
-        z=grid, x=np.linspace(0, W, nx), y=np.linspace(0, H, ny),
-        colorscale=[
-            [0.00, "rgba(0,0,0,0)"],
-            [0.01, "rgba(255,255,0,0.4)"],
-            [0.50, "rgba(255,140,0,0.6)"],
-            [1.00, "rgba(200,0,0,0.85)"],
-        ],
-        showscale=False, xgap=1, ygap=1,
-        hovertemplate="Acciones en zona: %{z}<extra></extra>"
-    ))
-    layout2 = layout_cancha(500)
-    layout2.pop("legend", None)
-    fig2.update_layout(**layout2)
-    st.plotly_chart(fig2, use_container_width=True)
-else:
-    st.info("Seleccioná al menos un tipo de evento en el filtro para generar el mapa de calor.")
