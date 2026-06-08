@@ -75,16 +75,28 @@ def stats_jugador(nombre, eventos):
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
-    j = eventos[eventos["Player"].apply(lambda x: str(x).lower() in nombre.lower())]
+    
+    j = eventos[eventos["Player"].str.lower() == nombre.lower()]
     if j.empty:
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
+        
     partidos = j["fecha"].nunique()
-    minutos  = int(
-        j.groupby("fecha")["Mins"].max().sum()
-        - j.groupby("fecha")["Mins"].min().sum()
+    
+    #  USAMOS 'tiempo_total' PARA CALCULAR LOS MINUTOS REALES DE CORRIDO
+    # Primero nos aseguramos de que sea numérico por las dudas
+    j["tiempo_total"] = pd.to_numeric(j["tiempo_total"], errors="coerce")
+    
+    minutos = int(
+        j.groupby("fecha")["tiempo_total"].max().sum()
+        - j.groupby("fecha")["tiempo_total"].min().sum()
     )
+    
+    # Por si jugó un puñado de segundos y la resta da 0, le damos 1 minuto por presencia
+    if len(j) > 0 and minutos == 0:
+        minutos = 1
+
     return {
         "partidos":       partidos,
         "minutos":        minutos,
