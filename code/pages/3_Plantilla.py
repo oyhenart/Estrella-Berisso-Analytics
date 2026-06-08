@@ -71,12 +71,17 @@ def estado_jugador(nombre, alertas):
 
 
 def stats_jugador(nombre, eventos):
+    # Si la base de datos de eventos está vacía
     if eventos.empty:
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
     
+    # Filtrar eventos del jugador
     j = eventos[eventos["Player"].str.lower() == nombre.lower()]
+    
+    # 🛡️ PROTECCIÓN CRUCIAL: Si el jugador no tocó ninguna pelota en el partido,
+    # salimos de la función de inmediato devolviendo todo en 0. Evita el colapso.
     if j.empty:
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
@@ -91,19 +96,19 @@ def stats_jugador(nombre, eventos):
     # El último minuto registrado de todo el partido (ej: 96)
     final_del_partido = int(eventos["tiempo_total"].max())
     
-    # Tu lógica: Primer evento registrado en el global del partido
+    # Tu lógica empírica: Primer evento registrado en el global del partido
     primer_evento_jugador = int(j["tiempo_total"].min())
     
-    # Si el jugador es titular (su primera acción es en el arranque, ej: min 3, 4 o 5), 
-    # le damos los 90 minutos estándar o lo que haya durado el partido.
+    # Si es titular (su primera acción es en el arranque, ej: min 3, 4 o 5), 
+    # le damos el tiempo total que haya durado el partido.
     if primer_evento_jugador <= 15:
         minutos = final_del_partido
     else:
-        # Si entró de cambio, cuenta DESDE su primera acción hasta el final
+        # Si entró de cambio, cuenta DESDE su primera acción con pelota hasta el final
         minutos = int(final_del_partido - primer_evento_jugador + 1)
 
     # Resguardo por si las dudas
-    if len(j) > 0 and minutos <= 0:
+    if minutos <= 0:
         minutos = 1
 
     return {
