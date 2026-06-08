@@ -188,6 +188,54 @@ st.subheader("Ubicación de eventos en campo de juego")
 
 fig = go.Figure()
 
+# ── GRÁFICO 3: MAPA DE CALOR ───────────────────────────────────────────────
+st.divider()
+st.subheader("Mapa de calor de eventos")
+
+if not df_filtrado.empty:
+
+    fig_heat = go.Figure()
+
+    fig_heat.add_trace(
+        go.Histogram2dContour(
+            x=df_filtrado["X"],
+            y=df_filtrado["Y"],
+            colorscale="Hot",
+            contours=dict(
+                coloring="heatmap"
+            ),
+            showscale=True,
+            hoverinfo="skip"
+        )
+    )
+
+    fig_heat.add_trace(
+        go.Scatter(
+            x=df_filtrado["X"],
+            y=df_filtrado["Y"],
+            mode="markers",
+            marker=dict(
+                size=4,
+                color="white",
+                opacity=0.25
+            ),
+            showlegend=False,
+            hoverinfo="skip"
+        )
+    )
+
+    fig_heat.update_layout(
+        **layout_cancha(600)
+    )
+
+    st.plotly_chart(
+        fig_heat,
+        use_container_width=True
+    )
+
+else:
+    st.info("No hay eventos para generar el mapa de calor.")
+
 # 1. Si "pase" está seleccionado en el multiselect, dibujamos vectores dirigidos
 if "pase" in eventos_sel and not df_pases_f.empty:
     correctos = df_pases_f[df_pases_f["resultado"] == 1]
