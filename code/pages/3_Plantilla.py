@@ -84,17 +84,26 @@ def stats_jugador(nombre, eventos):
         
     partidos = j["fecha"].nunique()
     
-    #  USAMOS 'tiempo_total' PARA CALCULAR LOS MINUTOS REALES DE CORRIDO
-    # Primero nos aseguramos de que sea numérico por las dudas
+    # Forzar que tiempo_total sea numérico para hacer matemáticas limpias
     j["tiempo_total"] = pd.to_numeric(j["tiempo_total"], errors="coerce")
+    eventos["tiempo_total"] = pd.to_numeric(eventos["tiempo_total"], errors="coerce")
     
-    minutos = int(
-        j.groupby("fecha")["tiempo_total"].max().sum()
-        - j.groupby("fecha")["tiempo_total"].min().sum()
-    )
+    # El último minuto registrado de todo el partido (ej: 96)
+    final_del_partido = int(eventos["tiempo_total"].max())
     
-    # Por si jugó un puñado de segundos y la resta da 0, le damos 1 minuto por presencia
-    if len(j) > 0 and minutos == 0:
+    # Tu lógica: Primer evento registrado en el global del partido
+    primer_evento_jugador = int(j["tiempo_total"].min())
+    
+    # Si el jugador es titular (su primera acción es en el arranque, ej: min 3, 4 o 5), 
+    # le damos los 90 minutos estándar o lo que haya durado el partido.
+    if primer_evento_jugador <= 15:
+        minutos = final_del_partido
+    else:
+        # Si entró de cambio, cuenta DESDE su primera acción hasta el final
+        minutos = int(final_del_partido - primer_evento_jugador + 1)
+
+    # Resguardo por si las dudas
+    if len(j) > 0 and minutos <= 0:
         minutos = 1
 
     return {
