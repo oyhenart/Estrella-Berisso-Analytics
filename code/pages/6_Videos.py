@@ -55,7 +55,7 @@ def estado_jugador(nombre, alertas):
     if fila.empty:
         return "✅", "Disponible"
     for _, row in fila.iterrows():
-        tipo   = str(row["tipo"]).lower()
+        tipo    = str(row["tipo"]).lower()
         regreso = row.get("fecha_regreso", None)
         activo  = pd.isna(regreso) or regreso >= hoy
         if not activo:
@@ -75,46 +75,38 @@ def stats_jugador(nombre, eventos):
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
-    
-    j = eventos[eventos["Player"].str.lower() == nombre.lower()]
+
+    j = eventos[eventos["Player"].str.lower() == nombre.lower()].copy()
     if j.empty:
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
-        
+
     partidos = j["fecha"].nunique()
-    
-    # Asegurar formato numérico
-    j = j.copy()
-    j["tiempo_total"] = pd.to_numeric(j["tiempo_total"], errors="coerce")
+
+    # Asegurar formato numérico en Mins
     eventos = eventos.copy()
-    eventos["tiempo_total"] = pd.to_numeric(eventos["tiempo_total"], errors="coerce")
-    
+    eventos["Mins"] = pd.to_numeric(eventos["Mins"], errors="coerce")
+    j["Mins"]       = pd.to_numeric(j["Mins"], errors="coerce")
+
     minutos_totales = 0
-    
-    # PROCESAMOS CADA FECHA DE FORMA INDEPENDIENTE
+
     for f in j["fecha"].unique():
-        # Filtramos el partido completo de esa fecha y los eventos del jugador en esa fecha
         eventos_partido_fecha = eventos[eventos["fecha"] == f]
         eventos_jugador_fecha = j[j["fecha"] == f]
-        
-        # Último segundo registrado del partido, convertido a minutos
-        final_del_partido = int(eventos_partido_fecha["tiempo_total"].max()) // 60
-        
-        # Primer segundo registrado del jugador en este partido, convertido a minutos
-        primer_evento_jugador = int(eventos_jugador_fecha["tiempo_total"].min()) // 60
-        
-        # Si es titular (primera acción en los primeros 15 min), sumamos el partido entero
+
+        # Usar Mins que siempre representa el minuto real del partido
+        final_del_partido     = int(eventos_partido_fecha["Mins"].max())
+        primer_evento_jugador = int(eventos_jugador_fecha["Mins"].min())
+
         if primer_evento_jugador <= 15:
             minutos_partido = final_del_partido
         else:
-            # Si entró de cambio, cuenta desde su primer toque hasta el final
             minutos_partido = int(final_del_partido - primer_evento_jugador + 1)
-            
+
         if minutos_partido <= 0:
             minutos_partido = 1
-            
-        # Acumulamos los minutos de este partido al total histórico del jugador
+
         minutos_totales += minutos_partido
 
     return {
@@ -167,10 +159,10 @@ with tab1:
             idx = i + j
             if idx >= len(lista):
                 break
-            row        = lista.iloc[idx]
-            foto_path  = os.path.join(FOTOS_DIR, str(row["fotos"]))
+            row       = lista.iloc[idx]
+            foto_path = os.path.join(FOTOS_DIR, str(row["fotos"]))
             icono, estado_txt = estado_jugador(row["nombre"], alertas)
-            stats      = stats_jugador(row["nombre"], eventos)
+            stats     = stats_jugador(row["nombre"], eventos)
 
             with col:
                 if os.path.exists(foto_path):
@@ -200,7 +192,7 @@ with tab1:
 with tab2:
     st.subheader("Comparador de jugadores")
 
-    nombres      = sorted(jugadores["nombre"].tolist())
+    nombres       = sorted(jugadores["nombre"].tolist())
     seleccionados = st.multiselect(
         "Elegí los jugadores a comparar (mínimo 2)",
         nombres,
@@ -215,7 +207,7 @@ with tab2:
 
         st.divider()
 
-        filas      = []
+        filas       = []
         stats_todos = {}
         for nombre in seleccionados:
             s = stats_jugador(nombre, eventos)
@@ -241,7 +233,7 @@ with tab2:
 
         fig = go.Figure()
         for idx, nombre in enumerate(seleccionados):
-            s      = stats_todos[nombre]
+            s       = stats_todos[nombre]
             valores = [s[m] for m in METRICAS] + [s[METRICAS[0]]]
             fig.add_trace(go.Scatterpolar(
                 r=valores,
