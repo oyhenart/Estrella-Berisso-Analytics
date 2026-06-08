@@ -155,10 +155,12 @@ if jugador_sel != "Todos":
 
 from mplsoccer import Pitch
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 
-# -------------------------------------------------------------------------
-# Normalización de coordenadas
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# LIMPIEZA DE COORDENADAS
+# -----------------------------------------------------------------------------
 
 for col in ["X", "Y", "X2", "Y2"]:
     if col in df_filtrado.columns:
@@ -167,9 +169,9 @@ for col in ["X", "Y", "X2", "Y2"]:
             errors="coerce"
         )
 
-# -------------------------------------------------------------------------
-# Función única para dibujar cancha
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# CONFIGURACIÓN DE CANCHA
+# -----------------------------------------------------------------------------
 
 def crear_cancha():
 
@@ -178,6 +180,7 @@ def crear_cancha():
         pitch_color="#1B4332",
         line_color="white",
         linewidth=2,
+        line_zorder=10,
         corner_arcs=True
     )
 
@@ -191,7 +194,7 @@ def crear_cancha():
 
 
 # =============================================================================
-# 1. MAPA DE EVENTOS
+# GRÁFICO 1 - MAPA DE EVENTOS
 # =============================================================================
 
 st.subheader("📍 Ubicación de eventos en campo de juego")
@@ -226,20 +229,69 @@ if not df_filtrado.empty:
         if subset.empty:
             continue
 
-        pitch.scatter(
-            subset["X"],
-            subset["Y"],
-            ax=ax,
-            s=90,
-            color=colores_eventos.get(
-                evento.lower(),
-                "#FFFFFF"
-            ),
-            edgecolors="white",
-            linewidth=0.8,
-            alpha=0.85,
-            label=evento.title()
-        )
+        # --------------------------------------------------
+        # PASES Y CENTROS = FLECHAS
+        # --------------------------------------------------
+
+        if evento.lower() in ["pase", "centro"]:
+
+            subset_flechas = subset[
+                subset["X2"].notna()
+                &
+                subset["Y2"].notna()
+            ]
+
+            if not subset_flechas.empty:
+
+                pitch.arrows(
+                    subset_flechas["X"],
+                    subset_flechas["Y"],
+                    subset_flechas["X2"],
+                    subset_flechas["Y2"],
+                    ax=ax,
+                    color=colores_eventos.get(
+                        evento.lower(),
+                        "#FFFFFF"
+                    ),
+                    width=2,
+                    alpha=0.75
+                )
+
+            pitch.scatter(
+                subset["X"],
+                subset["Y"],
+                ax=ax,
+                s=60,
+                color=colores_eventos.get(
+                    evento.lower(),
+                    "#FFFFFF"
+                ),
+                edgecolors="white",
+                linewidth=0.7,
+                alpha=0.9,
+                label=evento.title()
+            )
+
+        # --------------------------------------------------
+        # RESTO DE EVENTOS
+        # --------------------------------------------------
+
+        else:
+
+            pitch.scatter(
+                subset["X"],
+                subset["Y"],
+                ax=ax,
+                s=80,
+                color=colores_eventos.get(
+                    evento.lower(),
+                    "#FFFFFF"
+                ),
+                edgecolors="white",
+                linewidth=0.8,
+                alpha=0.85,
+                label=evento.title()
+            )
 
     ax.legend(
         loc="upper left",
@@ -262,7 +314,7 @@ else:
 
 
 # =============================================================================
-# 2. MAPA DE CALOR
+# GRÁFICO 2 - MAPA DE CALOR
 # =============================================================================
 
 st.divider()
@@ -273,27 +325,23 @@ if not df_filtrado.empty:
 
     pitch, fig, ax = crear_cancha()
 
+    # Menos subdivisiones para jugadores individuales
+    bins_x = 8
+    bins_y = 6
+
     bin_stat = pitch.bin_statistic(
         df_filtrado["X"],
         df_filtrado["Y"],
         statistic="count",
-        bins=(12, 8)
+        bins=(bins_x, bins_y)
     )
 
     pitch.heatmap(
         bin_stat,
         ax=ax,
         cmap="Reds",
+        alpha=0.65,
         edgecolors="#1B4332"
-    )
-
-    pitch.label_heatmap(
-        bin_stat,
-        color="white",
-        fontsize=8,
-        ax=ax,
-        ha="center",
-        va="center"
     )
 
     st.pyplot(
@@ -309,23 +357,26 @@ else:
 
 
 # =============================================================================
-# 3. RED DE PASES
+# GRÁFICO 3 - RED DE PASES
 # =============================================================================
 
 st.divider()
 
 st.subheader("🕸️ Red de pases")
 
-st.info(
+st.warning(
     """
-    La red de pases será reconstruida específicamente para el modelo
-    de datos de FC Python.
-
     Próxima versión:
-    • detección automática de conexiones
-    • flechas direccionales
-    • grosor según frecuencia
-    • nodos por jugador
-    • integración completa con mplsoccer
+
+    • Reconstrucción automática de conexiones
+    • Detección espacial de receptor
+    • Flechas direccionales
+    • Grosor según frecuencia
+    • Nodos por jugador
+    • Integración completa con mplsoccer
+
+    Actualmente la red antigua fue desactivada porque dependía de
+    columnas 'Resultado' y 'Receptor' que no existen en el modelo
+    de datos de FC Python.
     """
 )
