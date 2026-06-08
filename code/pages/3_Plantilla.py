@@ -75,7 +75,7 @@ def stats_jugador(nombre, eventos):
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
                 "despejes": 0, "faltas": 0, "remates": 0}
-    j = eventos[eventos["Player"].str.lower() == nombre.lower()]
+    j = eventos[eventos["Player"].apply(lambda x: str(x).lower() in nombre.lower())]
     if j.empty:
         return {"partidos": 0, "minutos": 0, "pases": 0,
                 "recuperaciones": 0, "conducciones": 0,
