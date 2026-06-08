@@ -149,134 +149,183 @@ if jugador_sel != "Todos":
     df_filtrado  = df_filtrado[df_filtrado["Player"] == jugador_sel]
     df_pases_f   = df_pases_f[df_pases_f["jugador_origen"] == jugador_sel]
 
-# ── Funciones de Diseño de la Cancha ───────────────────────────────────────────
-def shapes_cancha():
-    s = []
-    def rect(x0, y0, x1, y1, fill="#1B4332", lw=1.5):
-        return dict(type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
-                    fillcolor=fill, line=dict(color="white", width=lw), layer="below")
-    def line(x0, y0, x1, y1, lw=1.5):
-        return dict(type="line", x0=x0, y0=y0, x1=x1, y1=y1,
-                    line=dict(color="white", width=lw), layer="below")
-    def circle(x0, y0, x1, y1):
-        return dict(type="circle", x0=x0, y0=y0, x1=x1, y1=y1,
-                    line=dict(color="white", width=1.5), fillcolor="rgba(0,0,0,0)", layer="below")
-    
-    s.append(rect(0, 0, W, H, lw=2))
-    s.append(line(W/2, 0, W/2, H))
-    s.append(circle(W/2-CR, H/2-CR, W/2+CR, H/2+CR))
-    s.append(rect(0, (H-AG_Y)/2, AG_X, (H+AG_Y)/2))
-    s.append(rect(0, (H-AC_Y)/2, AC_X, (H+AC_Y)/2))
-    s.append(line(0, (H-ARCO)/2, 0, (H+ARCO)/2, lw=4))
-    s.append(rect(W-AG_X, (H-AG_Y)/2, W, (H+AG_Y)/2))
-    s.append(rect(W-AC_X, (H-AC_Y)/2, W, (H+AC_Y)/2))
-    s.append(line(W, (H-ARCO)/2, W, (H+ARCO)/2, lw=4))
-    return s
+# =============================================================================
+# VISUALIZACIONES DE CANCHA - MPLSOCCER
+# =============================================================================
 
-def layout_cancha(height=600):
-    return dict(
-        height=height, margin=dict(l=10, r=10, t=10, b=10),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#1B4332",
-        xaxis=dict(range=[-2, W+2], showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(range=[H+2, -2], showgrid=False, zeroline=False, showticklabels=False, scaleanchor="x", scaleratio=0.69),
-        shapes=shapes_cancha(),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(color="white")),
+from mplsoccer import Pitch
+import matplotlib.pyplot as plt
+
+# -------------------------------------------------------------------------
+# Normalización de coordenadas
+# -------------------------------------------------------------------------
+
+for col in ["X", "Y", "X2", "Y2"]:
+    if col in df_filtrado.columns:
+        df_filtrado[col] = pd.to_numeric(
+            df_filtrado[col],
+            errors="coerce"
+        )
+
+# -------------------------------------------------------------------------
+# Función única para dibujar cancha
+# -------------------------------------------------------------------------
+
+def crear_cancha():
+
+    pitch = Pitch(
+        pitch_type="opta",
+        pitch_color="#1B4332",
+        line_color="white",
+        linewidth=2,
+        corner_arcs=True
     )
 
-# ── GRÁFICO 3: MAPA DE CALOR POR ZONAS ───────────────────────────────
+    fig, ax = pitch.draw(
+        figsize=(12, 8)
+    )
 
-st.divider()
-st.subheader("Mapa de calor de eventos")
+    fig.set_facecolor("#1B4332")
+
+    return pitch, fig, ax
+
+
+# =============================================================================
+# 1. MAPA DE EVENTOS
+# =============================================================================
+
+st.subheader("📍 Ubicación de eventos en campo de juego")
 
 if not df_filtrado.empty:
 
-    heat = df_filtrado.copy()
+    pitch, fig, ax = crear_cancha()
 
-    # cantidad de divisiones
-    bins_x = 10
-    bins_y = 10
+    colores_eventos = {
+        "pase": "#4ade80",
+        "centro": "#60a5fa",
+        "tiro": "#ef4444",
+        "remate": "#ef4444",
+        "recuperacion": "#facc15",
+        "perdida": "#f97316",
+        "duelo": "#c084fc",
+        "intercepcion": "#22d3ee"
+    }
 
-    heat["zona_x"] = pd.cut(
-        heat["X"],
-        bins=bins_x,
-        labels=False,
-        include_lowest=True
+    eventos_presentes = (
+        df_filtrado["Event"]
+        .dropna()
+        .unique()
     )
 
-    heat["zona_y"] = pd.cut(
-        heat["Y"],
-        bins=bins_y,
-        labels=False,
-        include_lowest=True
-    )
+    for evento in eventos_presentes:
 
-    zonas = (
-        heat
-        .groupby(["zona_x", "zona_y"])
-        .size()
-        .reset_index(name="eventos")
-    )
+        subset = df_filtrado[
+            df_filtrado["Event"] == evento
+        ]
 
-    fig_heat = go.Figure()
+        if subset.empty:
+            continue
 
-    max_eventos = zonas["eventos"].max()
-
-    ancho = 100 / bins_x
-    alto = 100 / bins_y
-
-    for _, fila in zonas.iterrows():
-
-        intensidad = fila["eventos"] / max_eventos
-
-        opacity = max(
-            0.15,
-            intensidad
-        )
-
-        x0 = fila["zona_x"] * ancho
-        x1 = x0 + ancho
-
-        y0 = fila["zona_y"] * alto
-        y1 = y0 + alto
-
-        fig_heat.add_shape(
-            type="rect",
-            x0=x0,
-            x1=x1,
-            y0=y0,
-            y1=y1,
-            fillcolor=f"rgba(255,0,0,{opacity})",
-            line=dict(
-                width=0
+        pitch.scatter(
+            subset["X"],
+            subset["Y"],
+            ax=ax,
+            s=90,
+            color=colores_eventos.get(
+                evento.lower(),
+                "#FFFFFF"
             ),
-            layer="above"
+            edgecolors="white",
+            linewidth=0.8,
+            alpha=0.85,
+            label=evento.title()
         )
 
-    fig_heat.add_trace(
-        go.Scatter(
-            x=heat["X"],
-            y=heat["Y"],
-            mode="markers",
-            marker=dict(
-                size=3,
-                color="white",
-                opacity=0.25
-            ),
-            showlegend=False,
-            hoverinfo="skip"
-        )
+    ax.legend(
+        loc="upper left",
+        fontsize=8,
+        facecolor="#1B4332",
+        edgecolor="white",
+        labelcolor="white"
     )
 
-    fig_heat.update_layout(
-        **layout_cancha(650)
-    )
-
-    st.plotly_chart(
-        fig_heat,
+    st.pyplot(
+        fig,
         use_container_width=True
     )
 
 else:
+
+    st.info(
+        "No hay eventos para mostrar."
+    )
+
+
+# =============================================================================
+# 2. MAPA DE CALOR
+# =============================================================================
+
+st.divider()
+
+st.subheader("🔥 Mapa de calor")
+
+if not df_filtrado.empty:
+
+    pitch, fig, ax = crear_cancha()
+
+    bin_stat = pitch.bin_statistic(
+        df_filtrado["X"],
+        df_filtrado["Y"],
+        statistic="count",
+        bins=(12, 8)
+    )
+
+    pitch.heatmap(
+        bin_stat,
+        ax=ax,
+        cmap="Reds",
+        edgecolors="#1B4332"
+    )
+
+    pitch.label_heatmap(
+        bin_stat,
+        color="white",
+        fontsize=8,
+        ax=ax,
+        ha="center",
+        va="center"
+    )
+
+    st.pyplot(
+        fig,
+        use_container_width=True
+    )
+
+else:
+
     st.info(
         "No hay eventos para generar el mapa de calor."
     )
+
+
+# =============================================================================
+# 3. RED DE PASES
+# =============================================================================
+
+st.divider()
+
+st.subheader("🕸️ Red de pases")
+
+st.info(
+    """
+    La red de pases será reconstruida específicamente para el modelo
+    de datos de FC Python.
+
+    Próxima versión:
+    • detección automática de conexiones
+    • flechas direccionales
+    • grosor según frecuencia
+    • nodos por jugador
+    • integración completa con mplsoccer
+    """
+)
