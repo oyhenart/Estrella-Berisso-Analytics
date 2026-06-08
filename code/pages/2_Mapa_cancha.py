@@ -183,39 +183,82 @@ def layout_cancha(height=600):
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(color="white")),
     )
 
-# ── GRÁFICO 1: MAPA GENERAL DE EVENTOS (CON FLECHAS REPARADAS) ──────────────
-st.subheader("Ubicación de eventos en campo de juego")
+# ── GRÁFICO 3: MAPA DE CALOR POR ZONAS ───────────────────────────────
 
-fig = go.Figure()
-
-# ── GRÁFICO 3: MAPA DE CALOR ───────────────────────────────────────────────
 st.divider()
 st.subheader("Mapa de calor de eventos")
 
 if not df_filtrado.empty:
 
+    heat = df_filtrado.copy()
+
+    # cantidad de divisiones
+    bins_x = 10
+    bins_y = 10
+
+    heat["zona_x"] = pd.cut(
+        heat["X"],
+        bins=bins_x,
+        labels=False,
+        include_lowest=True
+    )
+
+    heat["zona_y"] = pd.cut(
+        heat["Y"],
+        bins=bins_y,
+        labels=False,
+        include_lowest=True
+    )
+
+    zonas = (
+        heat
+        .groupby(["zona_x", "zona_y"])
+        .size()
+        .reset_index(name="eventos")
+    )
+
     fig_heat = go.Figure()
 
-    fig_heat.add_trace(
-        go.Histogram2dContour(
-            x=df_filtrado["X"],
-            y=df_filtrado["Y"],
-            colorscale="Hot",
-            contours=dict(
-                coloring="heatmap"
-            ),
-            showscale=True,
-            hoverinfo="skip"
+    max_eventos = zonas["eventos"].max()
+
+    ancho = 100 / bins_x
+    alto = 100 / bins_y
+
+    for _, fila in zonas.iterrows():
+
+        intensidad = fila["eventos"] / max_eventos
+
+        opacity = max(
+            0.15,
+            intensidad
         )
-    )
+
+        x0 = fila["zona_x"] * ancho
+        x1 = x0 + ancho
+
+        y0 = fila["zona_y"] * alto
+        y1 = y0 + alto
+
+        fig_heat.add_shape(
+            type="rect",
+            x0=x0,
+            x1=x1,
+            y0=y0,
+            y1=y1,
+            fillcolor=f"rgba(255,0,0,{opacity})",
+            line=dict(
+                width=0
+            ),
+            layer="above"
+        )
 
     fig_heat.add_trace(
         go.Scatter(
-            x=df_filtrado["X"],
-            y=df_filtrado["Y"],
+            x=heat["X"],
+            y=heat["Y"],
             mode="markers",
             marker=dict(
-                size=4,
+                size=3,
                 color="white",
                 opacity=0.25
             ),
@@ -225,7 +268,7 @@ if not df_filtrado.empty:
     )
 
     fig_heat.update_layout(
-        **layout_cancha(600)
+        **layout_cancha(650)
     )
 
     st.plotly_chart(
@@ -234,135 +277,6 @@ if not df_filtrado.empty:
     )
 
 else:
-    st.info("No hay eventos para generar el mapa de calor.")
-
-# 1. Si "pase" está seleccionado en el multiselect, dibujamos vectores dirigidos
-if "pase" in eventos_sel and not df_pases_f.empty:
-    correctos = df_pases_f[df_pases_f["resultado"] == 1]
-    incorrectos = df_pases_f[df_pases_f["resultado"] == 0]
-    
-    def graficar_pases_con_flechas(df_sub, color, nombre):
-        if df_sub.empty: 
-            return
-        
-        # Agrupamos un scatter invisible para la leyenda y el hover coordinado
-        fig.add_trace(go.Scatter(
-            x=df_sub["x_origen"], 
-            y=df_sub["y_origen"],
-            mode="markers",
-            marker=dict(size=0, opacity=0), # Invisible, solo para activar el hover y la leyenda
-            name=nombre,
-            legendgroup=nombre
-        ))
-        
-        # Dibujamos cada pase individualmente como una flecha nativa de Plotly
-        for _, row in df_sub.iterrows():
-            fig.add_annotation(
-                x=row["x_destino"],
-                y=row["y_destino"],
-                ax=row["x_origen"],
-                ay=row["y_origen"],
-                xref="x", yref="y",
-                axref="x", ayref="y",
-                showarrow=True,
-                arrowhead=2,    # Tipo de punta de flecha estilizada
-                arrowsize=1.2,  # Tamaño de la punta
-                arrowwidth=1.5, # Grosor de la línea
-                arrowcolor=color,
-                opacity=0.75
-            )
-
-    graficar_pases_con_flechas(correctos, colores["pase_correcto"], "Pase Completado")
-    graficar_pases_con_flechas(incorrectos, colores["pase_incorrecto"], "Pase Errado")
-
-# 2. Representación de todos los demás eventos seleccionados (recuperaciones, pérdidas, etc.)
-for evento in eventos_sel:
-    if evento == "pase":
-        continue # El pase ya lo vectorizamos arriba de forma avanzada
-        
-    subset = df_filtrado[df_filtrado["Event"] == evento]
-    if subset.empty:
-        continue
-        
-    fig.add_trace(go.Scatter(
-        x=subset["X"], y=subset["Y"],
-        mode="markers", name=evento,
-        marker=dict(
-            color=colores.get(evento, "#ffffff"),
-            size=10, opacity=0.9,
-            line=dict(color="white", width=1)
-        ),
-        customdata=subset[["Player", "Mins", "Secs"]].values,
-        hovertemplate=(
-            "<b>%{customdata[0]}</b><br>"
-            "Evento: " + evento + "<br>"
-            "Tiempo: %{customdata[1]:.0f}:%{customdata[2]:.0f}<br><extra></extra>"
-        ),
-    ))
-
-# Forzamos los rangos exactos de la cancha para que nada se vaya de eje
-layout_actualizado = layout_cancha(600)
-layout_actualizado["xaxis"]["range"] = [-2, 102]
-layout_actualizado["yaxis"]["range"] = [102, -2] # Mantiene el origen 0,0 arriba o abajo según tu convención
-
-fig.update_layout(**layout_actualizado)
-st.plotly_chart(fig, use_container_width=True)
-
-
-# ── GRÁFICO 2: RED DE PASES COLECTIVA (REPARADA) ───────────────────────────
-st.divider()
-st.subheader("Estructura de la Red de Pases Colectiva")
-
-if fecha_sel == "Todos los partidos":
-    st.info("💡 Consejo táctico: Elegí una Fecha puntual en los filtros superiores para examinar la red de pases exacta de una alineación.")
-
-# Usamos solo pases correctos para la red estructural
-df_red = df_pases_f[df_pases_f["resultado"] == 1].copy()
-
-if len(df_red) > 5:
-    # Calculamos posiciones medias de los jugadores en la cancha
-    pos_media = df_red.groupby("jugador_origen")[["x_origen", "y_origen"]].mean().reset_index()
-    cant_pases = df_red.groupby("jugador_origen").size().reset_index(name="cantidad")
-    pos_media = pos_media.merge(cant_pases, on="jugador_origen")
-    
-    # Agrupamos las sociedades entre jugadores
-    conexiones = df_red.groupby(["jugador_origen", "jugador_destino"]).size().reset_index(name="frecuencia")
-    conexiones = conexiones[conexiones["frecuencia"] >= 2] # Filtro mínimo de conexiones
-
-    fig_red = go.Figure()
-
-    # Trazamos los enlaces de la red (Sociedades)
-    for _, fila in conexiones.iterrows():
-        orig = pos_media[pos_media["jugador_origen"] == fila["jugador_origen"]]
-        dest = pos_media[pos_media["jugador_origen"] == fila["jugador_destino"]]
-        
-        if not orig.empty and not dest.empty:
-            fig_red.add_trace(go.Scatter(
-                x=[orig["x_origen"].values[0], dest["x_origen"].values[0]],
-                y=[orig["y_origen"].values[0], dest["y_origen"].values[0]],
-                mode="lines",
-                line=dict(color="rgba(252, 211, 77, 0.6)", width=min(fila["frecuencia"] * 1.5, 8)),
-                hoverinfo="skip", 
-                showlegend=False
-            ))
-
-    # Trazamos los nodos (Los jugadores)
-    fig_red.add_trace(go.Scatter(
-        x=pos_media["x_origen"], 
-        y=pos_media["y_origen"],
-        mode="markers+text",
-        marker=dict(
-            color="white", 
-            size=np.clip(pos_media["cantidad"] * 0.4 + 12, 12, 30), # Limita tamaños máximos
-            line=dict(color="#1B4332", width=2)
-        ),
-        text=pos_media["jugador_origen"], 
-        textposition="top center",
-        textfont=dict(color="white", size=11, family="Arial Black"),
-        name="Posición Media"
-    ))
-    
-    fig_red.update_layout(**layout_actualizado)
-    st.plotly_chart(fig_red, use_container_width=True)
-else:
-    st.info("No hay suficiente volumen de pases completados con receptor identificado para trazar el mapa de red estructural.")
+    st.info(
+        "No hay eventos para generar el mapa de calor."
+    )
