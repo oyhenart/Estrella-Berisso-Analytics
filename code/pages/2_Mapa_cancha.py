@@ -127,6 +127,87 @@ eventos_sel = st.multiselect("Tipo de evento a visualizar", eventos_disponibles,
 
 st.divider()
 
+# =============================================================================
+# CLASIFICACIÓN AUTOMÁTICA DE PASES
+# =============================================================================
+
+def clasificar_pases(df):
+
+    df = df.copy()
+
+    df["pase_ok"] = np.nan
+
+    eventos_continuidad = {
+        "pase",
+        "centro",
+        "conduccion",
+        "corner",
+        "remate",
+        "tiro libre",
+        "falta recibida"
+    }
+
+    eventos_corte = {
+        "perdida",
+        "despeje",
+        "recuperacion"
+    }
+
+    tolerancia = 8
+
+    for i in range(len(df)):
+
+        fila = df.iloc[i]
+
+        if str(fila["Event"]).lower() != "pase":
+            continue
+
+        if pd.isna(fila["X2"]) or pd.isna(fila["Y2"]):
+            df.at[df.index[i], "pase_ok"] = False
+            continue
+
+        destino_x = fila["X2"]
+        destino_y = fila["Y2"]
+
+        correcto = False
+
+        limite = min(i + 4, len(df))
+
+        for j in range(i + 1, limite):
+
+            siguiente = df.iloc[j]
+
+            if pd.isna(siguiente["X"]) or pd.isna(siguiente["Y"]):
+                continue
+
+            distancia = np.sqrt(
+                (destino_x - siguiente["X"])**2 +
+                (destino_y - siguiente["Y"])**2
+            )
+
+            if distancia > tolerancia:
+                continue
+
+            evento_sig = str(
+                siguiente["Event"]
+            ).lower()
+
+            if evento_sig in eventos_continuidad:
+                correcto = True
+                break
+
+            if evento_sig in eventos_corte:
+                correcto = False
+                break
+
+        df.at[df.index[i], "pase_ok"] = correcto
+
+    return df
+
+
+# Ejecutar clasificación
+df_filtrado = clasificar_pases(df_filtrado)
+
 # ── Lógica de Filtrado de Datos ────────────────────────────────────────────────
 if fecha_sel != "Todos los partidos":
     num_fecha   = int(fecha_sel.replace("Fecha ", ""))
