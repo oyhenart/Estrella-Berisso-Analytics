@@ -5,7 +5,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib.patches import FancyArrowPatch
 import io
 import os
 from reportlab.lib.pagesizes import A4
@@ -13,7 +12,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER
 
 from components.layout import inject_css, render_sidebar
 
@@ -23,10 +22,10 @@ inject_css()
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 render_sidebar(BASE)
 
-DATA_PATH    = os.path.join(BASE, "data", "events_clean.csv")
-FIXTURE_PATH = os.path.join(BASE, "data", "fixture.csv")
+DATA_PATH      = os.path.join(BASE, "data", "events_clean.csv")
+FIXTURE_PATH   = os.path.join(BASE, "data", "fixture.csv")
 JUGADORES_PATH = os.path.join(BASE, "data", "Jugadores.csv")
-ESCUDO_PATH  = os.path.join(BASE, "static", "escudo.png")
+ESCUDO_PATH    = os.path.join(BASE, "static", "escudo.png")
 
 st.markdown("""
 <div style='margin-bottom:24px'>
@@ -41,8 +40,7 @@ if not os.path.exists(DATA_PATH):
 
 @st.cache_data
 def cargar_datos():
-    df = pd.read_csv(DATA_PATH)
-    return df
+    return pd.read_csv(DATA_PATH)
 
 @st.cache_data(ttl=0)
 def cargar_fixture():
@@ -51,26 +49,26 @@ def cargar_fixture():
 @st.cache_data(ttl=0)
 def cargar_jugadores():
     df = pd.read_csv(JUGADORES_PATH)
-    df["nombre"] = df["nombre"].str.strip().str.title()
+    df["nombre"]   = df["nombre"].str.strip().str.title()
     df["posicion"] = df["posicion"].str.strip().str.title()
     return df
 
-df = cargar_datos()
-fixture = cargar_fixture()
+df         = cargar_datos()
+fixture    = cargar_fixture()
 jugadores_df = cargar_jugadores()
-pos_map = dict(zip(jugadores_df["nombre"], jugadores_df["posicion"]))
+pos_map    = dict(zip(jugadores_df["nombre"], jugadores_df["posicion"]))
 
-# ── Selector de fecha ─────────────────────────────────────────────────────────
-fechas = sorted(df["fecha"].unique().tolist())
+# ── Selector de partido ───────────────────────────────────────────────────────
+fechas    = sorted(df["fecha"].unique().tolist())
 fecha_sel = st.selectbox("Seleccioná el partido", [f"Fecha {f}" for f in fechas])
 num_fecha = int(fecha_sel.replace("Fecha ", ""))
 
-df_p = df[df["fecha"] == num_fecha].copy()
+df_p        = df[df["fecha"] == num_fecha].copy().reset_index(drop=True)
 fixture_row = fixture[fixture["fecha"] == num_fecha]
-rival = fixture_row["rival"].values[0] if not fixture_row.empty else "Rival"
-condicion = fixture_row["condicion"].values[0] if not fixture_row.empty else ""
-resultado = ""
-if not fixture_row.empty and fixture_row["estado"].values[0] == "Jugado":
+rival       = fixture_row["rival"].values[0]       if not fixture_row.empty else "Rival"
+condicion   = fixture_row["condicion"].values[0]   if not fixture_row.empty else ""
+resultado   = ""
+if not fixture_row.empty and str(fixture_row["estado"].values[0]) == "Jugado":
     gf = int(fixture_row["goles_favor"].values[0])
     gc = int(fixture_row["goles_contra"].values[0])
     resultado = f"{gf} - {gc}"
@@ -84,32 +82,40 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Funciones de gráficos ─────────────────────────────────────────────────────
-PITCH_COLOR = "#2D6A4F"
-LINE_COLOR  = "white"
+# ── Constantes de cancha ──────────────────────────────────────────────────────
 W, H = 100, 100
 AG_X=12.7; AG_Y=44.8; AC_X=4.2; AC_Y=20.4; ARCO=8.1; CR=7.0
+PITCH_BG = "#2D6A4F"
 
-def draw_pitch(ax, color=PITCH_COLOR):
-    ax.set_facecolor(color)
+METRICAS_POS = {
+    "Arquero":       ["despeje","recuperacion","pase"],
+    "Defensor":      ["recuperacion","despeje","falta cometida"],
+    "Mediocampista": ["pase","recuperacion","conduccion"],
+    "Delantero":     ["remate","gol","centro","conduccion"],
+}
+COLOR_POS = {"Arquero":"#60A5FA","Defensor":"#34D399",
+             "Mediocampista":"#FCD34D","Delantero":"#F87171"}
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def draw_pitch(ax):
+    ax.set_facecolor(PITCH_BG)
     ax.set_xlim(-2, 102); ax.set_ylim(102, -2)
     ax.set_aspect("equal"); ax.axis("off")
-    kw = dict(color=LINE_COLOR, linewidth=1.2)
-    ax.plot([0,W,W,0,0], [0,0,H,H,0], **kw)
-    ax.plot([W/2,W/2], [0,H], **kw)
-    circle = plt.Circle((W/2, H/2), CR, fill=False, **kw)
-    ax.add_patch(circle)
-    ax.plot([W/2], [H/2], 'o', color=LINE_COLOR, markersize=2)
-    for x0, x1 in [(0, AG_X), (W-AG_X, W)]:
+    kw = dict(color="white", linewidth=1.2)
+    ax.plot([0,W,W,0,0],[0,0,H,H,0], **kw)
+    ax.plot([W/2,W/2],[0,H], **kw)
+    ax.add_patch(plt.Circle((W/2,H/2), CR, fill=False, **kw))
+    ax.plot(W/2, H/2, "o", color="white", markersize=2)
+    for x0,x1 in [(0,AG_X),(W-AG_X,W)]:
         ax.plot([x0,x1,x1,x0,x0],
-                [(H-AG_Y)/2, (H-AG_Y)/2, (H+AG_Y)/2, (H+AG_Y)/2, (H-AG_Y)/2], **kw)
-    for x0, x1 in [(0, AC_X), (W-AC_X, W)]:
+                [(H-AG_Y)/2,(H-AG_Y)/2,(H+AG_Y)/2,(H+AG_Y)/2,(H-AG_Y)/2], **kw)
+    for x0,x1 in [(0,AC_X),(W-AC_X,W)]:
         ax.plot([x0,x1,x1,x0,x0],
-                [(H-AC_Y)/2, (H-AC_Y)/2, (H+AC_Y)/2, (H+AC_Y)/2, (H-AC_Y)/2], **kw)
-    ax.plot([0,0], [(H-ARCO)/2, (H+ARCO)/2], color=LINE_COLOR, linewidth=3)
-    ax.plot([W,W], [(H-ARCO)/2, (H+ARCO)/2], color=LINE_COLOR, linewidth=3)
+                [(H-AC_Y)/2,(H-AC_Y)/2,(H+AC_Y)/2,(H+AC_Y)/2,(H-AC_Y)/2], **kw)
+    ax.plot([0,0],[(H-ARCO)/2,(H+ARCO)/2], color="white", linewidth=3)
+    ax.plot([W,W],[(H-ARCO)/2,(H+ARCO)/2], color="white", linewidth=3)
 
-def fig_to_img(fig):
+def fig_to_buf(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight",
                 facecolor=fig.get_facecolor())
@@ -117,196 +123,130 @@ def fig_to_img(fig):
     plt.close(fig)
     return buf
 
+# ── Gráfico 1: Mapa de pases ──────────────────────────────────────────────────
 def grafico_pases(df_p):
     pases = df_p[df_p["Event"] == "pase"].copy()
-    perdidas = df_p[df_p["Event"] == "perdida"].copy()
+    # forzar numérico
+    for col in ["X","Y","X2","Y2"]:
+        pases[col] = pd.to_numeric(pases[col], errors="coerce")
 
     fig, ax = plt.subplots(figsize=(10, 6.9))
     fig.patch.set_facecolor("#111827")
     draw_pitch(ax)
 
-    # Pases completos (verde) — pase seguido de recepción de compañero
-    completados, incompletos = [], []
-    indices = pases.index.tolist()
-    for idx in indices:
-        pos = df_p.index.get_loc(idx)
-        if pos + 1 < len(df_p):
-            sig = df_p.iloc[pos + 1]
-            if sig["Event"] == "recuperacion" or (pd.notna(df_p.iloc[pos]["X2"])):
-                completados.append(idx)
-            else:
-                incompletos.append(idx)
+    completos = 0; incompletos = 0
+    for _, row in pases.iterrows():
+        x1, y1 = float(row["X"]), float(row["Y"])
+        x2, y2 = row["X2"], row["Y2"]
+        if pd.isna(x1) or pd.isna(y1): continue
+        if pd.notna(x2) and pd.notna(y2):
+            x2, y2 = float(x2), float(y2)
+            # ver si el siguiente evento es recuperacion (pase completo)
+            idx = row.name
+            sig_event = ""
+            if idx + 1 < len(df_p):
+                sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
+            color = "#34D399" if sig_event not in ["perdida",""] else "#F87171"
+            if color == "#34D399": completos += 1
+            else: incompletos += 1
+            dx, dy = x2 - x1, y2 - y1
+            ax.annotate("",
+                xy=(x2, y2), xytext=(x1, y1),
+                arrowprops=dict(
+                    arrowstyle="-|>",
+                    color=color,
+                    lw=1.2,
+                    mutation_scale=10,
+                ),
+            )
         else:
-            incompletos.append(idx)
-
-    for idx in completados:
-        row = df_p.loc[idx]
-        if pd.notna(row["X2"]) and pd.notna(row["Y2"]):
-            ax.annotate("", xy=(row["X2"], row["Y2"]), xytext=(row["X"], row["Y"]),
-                        arrowprops=dict(arrowstyle="-|>", color="#34D399", lw=1.2))
-    for idx in incompletos:
-        row = df_p.loc[idx]
-        if pd.notna(row["X2"]) and pd.notna(row["Y2"]):
-            ax.annotate("", xy=(row["X2"], row["Y2"]), xytext=(row["X"], row["Y"]),
-                        arrowprops=dict(arrowstyle="-|>", color="#F87171", lw=1.2))
+            # pase sin destino — punto simple
+            ax.plot(x1, y1, "o", color="#F87171", markersize=4, alpha=0.6)
+            incompletos += 1
 
     legend = [
-        mpatches.Patch(color="#34D399", label=f"Pase completo ({len(completados)})"),
-        mpatches.Patch(color="#F87171", label=f"Pase incompleto ({len(incompletos)})"),
+        mpatches.Patch(color="#34D399", label=f"Pase completo ({completos})"),
+        mpatches.Patch(color="#F87171", label=f"Pase incompleto ({incompletos})"),
     ]
     ax.legend(handles=legend, loc="upper left", framealpha=0.3,
               facecolor="#1F2937", edgecolor="none", labelcolor="white", fontsize=8)
     ax.set_title("Mapa de pases", color="white", fontsize=11, pad=8)
-    fig.tight_layout()
-    return fig_to_img(fig)
+    return fig
 
+# ── Gráfico 2: Heatmap ────────────────────────────────────────────────────────
 def grafico_heatmap(df_p):
     fig, ax = plt.subplots(figsize=(10, 6.9))
     fig.patch.set_facecolor("#111827")
     draw_pitch(ax)
-
     nx, ny = 13, 9
     xs = np.linspace(0, W, nx+1); ys = np.linspace(0, H, ny+1)
     grid = np.zeros((ny, nx))
     for _, row in df_p.iterrows():
-        if pd.notna(row["X"]) and pd.notna(row["Y"]):
-            xi = min(int(row["X"] / W * nx), nx-1)
-            yi = min(int(row["Y"] / H * ny), ny-1)
+        try:
+            xi = min(int(float(row["X"]) / W * nx), nx-1)
+            yi = min(int(float(row["Y"]) / H * ny), ny-1)
             grid[yi, xi] += 1
-
+        except: pass
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+        "heat", [(0,"none"),(0.01,"#FFFF0088"),(0.5,"#FF8C00BB"),(1,"#C80000DD")])
     xc = [(xs[i]+xs[i+1])/2 for i in range(nx)]
     yc = [(ys[i]+ys[i+1])/2 for i in range(ny)]
-    ax.pcolormesh(xc, yc, grid,
-                  cmap=matplotlib.colors.LinearSegmentedColormap.from_list(
-                      "heat", ["none","#FFFF0088","#FF8C00BB","#C80000DD"]),
-                  shading="nearest", zorder=2, alpha=0.8)
+    ax.pcolormesh(xc, yc, grid, cmap=cmap, shading="nearest", zorder=2, alpha=0.8)
     ax.set_title("Zonas de actividad", color="white", fontsize=11, pad=8)
-    fig.tight_layout()
-    return fig_to_img(fig)
+    return fig
 
+# ── Gráfico 3: Protagonistas ──────────────────────────────────────────────────
 def grafico_protagonistas(df_p, pos_map):
-    METRICAS = {
-        "Arquero":       ["despeje","recuperacion","pase"],
-        "Defensor":      ["recuperacion","despeje","falta cometida"],
-        "Mediocampista": ["pase","recuperacion","conduccion"],
-        "Delantero":     ["remate","gol","centro","conduccion"],
-    }
-    COLORES = {"Arquero":"#60A5FA","Defensor":"#34D399",
-               "Mediocampista":"#FCD34D","Delantero":"#F87171"}
-
     jugadores_top = []
     for jugador in df_p["Player"].unique():
-        dj = df_p[df_p["Player"] == jugador]
+        dj  = df_p[df_p["Player"] == jugador]
         pos = pos_map.get(jugador, "")
-        metricas = METRICAS.get(pos, ["pase","recuperacion","remate"])
-        score = sum(len(dj[dj["Event"] == m]) for m in metricas)
-        jugadores_top.append((jugador, pos, score, metricas, len(dj)))
+        met = METRICAS_POS.get(pos, ["pase","recuperacion","remate"])
+        score = sum(len(dj[dj["Event"] == m]) for m in met)
+        jugadores_top.append((jugador, pos, score, met))
     jugadores_top.sort(key=lambda x: x[2], reverse=True)
     top3 = jugadores_top[:3]
 
     fig, axes = plt.subplots(1, 3, figsize=(12, 4))
     fig.patch.set_facecolor("#111827")
-
-    for i, (jugador, pos, score, metricas, total) in enumerate(top3):
+    for i, (jugador, pos, score, met) in enumerate(top3):
         ax = axes[i]
         ax.set_facecolor("#1F2937")
-        dj = df_p[df_p["Player"] == jugador]
-        vals = [len(dj[dj["Event"] == m]) for m in metricas[:4]]
-        labels = [m.capitalize() for m in metricas[:4]]
-        color = COLORES.get(pos, "#9CA3AF")
-        bars = ax.barh(labels, vals, color=color, alpha=0.8)
+        dj   = df_p[df_p["Player"] == jugador]
+        vals = [len(dj[dj["Event"] == m]) for m in met[:4]]
+        labs = [m.capitalize() for m in met[:4]]
+        color = COLOR_POS.get(pos, "#9CA3AF")
+        bars = ax.barh(labs, vals, color=color, alpha=0.85)
         for bar, val in zip(bars, vals):
-            ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
+            ax.text(bar.get_width()+0.1, bar.get_y()+bar.get_height()/2,
                     str(val), va="center", color="white", fontsize=9)
         ax.set_title(f"{jugador}\n{pos or '—'}", color="white", fontsize=9, pad=6)
         ax.tick_params(colors="white", labelsize=8)
-        ax.spines[:].set_visible(False)
-        ax.set_xlim(0, max(vals or [1]) * 1.3)
-        for spine in ax.spines.values():
-            spine.set_edgecolor("#374151")
-
+        for sp in ax.spines.values(): sp.set_visible(False)
+        ax.set_xlim(0, max(vals or [1]) * 1.35)
     fig.suptitle("Protagonistas del partido", color="white", fontsize=12, y=1.02)
     fig.tight_layout()
-    return fig_to_img(fig)
+    return fig
 
+# ── Gráfico 4: Actividad por minuto ──────────────────────────────────────────
 def grafico_actividad(df_p):
     fig, ax = plt.subplots(figsize=(10, 3))
     fig.patch.set_facecolor("#111827")
     ax.set_facecolor("#1F2937")
     act = df_p.groupby("Mins")["Event"].count()
-    ax.bar(act.index, act.values, color="#374151", width=0.8)
+    ax.bar(act.index.astype(float), act.values, color="#374151", width=0.8)
     ax.axvline(45, color="#E23E3E", linestyle="--", linewidth=1, alpha=0.7, label="HT")
     ax.set_xlabel("Minuto", color="white", fontsize=9)
     ax.set_ylabel("Eventos", color="white", fontsize=9)
     ax.set_title("Actividad por minuto", color="white", fontsize=11)
     ax.tick_params(colors="white", labelsize=8)
-    ax.spines[:].set_visible(False)
+    for sp in ax.spines.values(): sp.set_visible(False)
     ax.legend(facecolor="#1F2937", edgecolor="none", labelcolor="white", fontsize=8)
     fig.tight_layout()
-    return fig_to_img(fig)
+    return fig
 
-# ── Generar PDF ───────────────────────────────────────────────────────────────
-def generar_pdf(df_p, fixture_row, rival, condicion, resultado, pos_map):
-    buf = io.BytesIO()
-
-    doc = SimpleDocTemplate(buf, pagesize=A4,
-                             leftMargin=1.5*cm, rightMargin=1.5*cm,
-                             topMargin=1.5*cm, bottomMargin=1.5*cm)
-
-    styles = getSampleStyleSheet()
-    DARK   = colors.HexColor("#111827")
-    ACCENT = colors.HexColor("#E23E3E")
-    LIGHT  = colors.HexColor("#F9FAFB")
-    MUTED  = colors.HexColor("#6B7280")
-
-    title_style = ParagraphStyle("title", parent=styles["Normal"],
-                                  fontSize=20, fontName="Helvetica-Bold",
-                                  textColor=LIGHT, spaceAfter=4)
-    sub_style   = ParagraphStyle("sub", parent=styles["Normal"],
-                                  fontSize=10, fontName="Helvetica",
-                                  textColor=MUTED, spaceAfter=12)
-    section_style = ParagraphStyle("section", parent=styles["Normal"],
-                                    fontSize=11, fontName="Helvetica-Bold",
-                                    textColor=ACCENT, spaceBefore=14, spaceAfter=6)
-    body_style  = ParagraphStyle("body", parent=styles["Normal"],
-                                  fontSize=9, fontName="Helvetica",
-                                  textColor=LIGHT, spaceAfter=4)
-
-    story = []
-
-    # Header
-    header_data = [["", "Club Atlético Estrella de Berisso\nReporte Post-Partido"]]
-    if os.path.exists(ESCUDO_PATH):
-        escudo = RLImage(ESCUDO_PATH, width=1.5*cm, height=1.5*cm)
-        header_data = [[escudo, Paragraph(
-            "<b>Club Atlético Estrella de Berisso</b><br/>Reporte Post-Partido",
-            ParagraphStyle("h", fontSize=14, fontName="Helvetica-Bold",
-                           textColor=LIGHT, leading=18))]]
-
-    header_table = Table(header_data, colWidths=[2*cm, 14*cm])
-    header_table.setStyle(TableStyle([
-        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        ("BACKGROUND", (0,0), (-1,-1), colors.HexColor("#1F2937")),
-        ("ROUNDEDCORNERS", [4]),
-        ("LEFTPADDING", (0,0), (-1,-1), 10),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
-        ("TOPPADDING", (0,0), (-1,-1), 10),
-    ]))
-    story.append(header_table)
-    story.append(Spacer(1, 0.3*cm))
-
-    # Datos del partido
-    story.append(HRFlowable(width="100%", thickness=1, color=ACCENT))
-    story.append(Spacer(1, 0.2*cm))
-
-    partido_info = f"<b>Fecha {num_fecha}</b> &nbsp;·&nbsp; Estrella de Berisso vs {rival} &nbsp;·&nbsp; {condicion}"
-    if resultado:
-        partido_info += f" &nbsp;·&nbsp; <b>{resultado}</b>"
-    story.append(Paragraph(partido_info, body_style))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#374151")))
-    story.append(Spacer(1, 0.3*cm))
-
-    # KPIs resumen
+# ── Preview en pantalla ───────────────────────────────────────────────────────
+def mostrar_preview(df_p, pos_map):
     pases_t    = len(df_p[df_p["Event"] == "pase"])
     recup_t    = len(df_p[df_p["Event"] == "recuperacion"])
     perdidas_t = len(df_p[df_p["Event"] == "perdida"])
@@ -315,93 +255,178 @@ def generar_pdf(df_p, fixture_row, rival, condicion, resultado, pos_map):
     faltas_t   = len(df_p[df_p["Event"] == "falta cometida"])
     ratio      = round(pases_t / perdidas_t, 1) if perdidas_t > 0 else "—"
 
-    kpi_data = [
-        ["Pases", "Recuperaciones", "Pérdidas", "Ratio P/P", "Remates", "Goles", "Faltas"],
-        [str(pases_t), str(recup_t), str(perdidas_t), str(ratio), str(remates_t), str(goles_t), str(faltas_t)],
-    ]
-    kpi_table = Table(kpi_data, colWidths=[2.6*cm]*7)
-    kpi_table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1F2937")),
-        ("BACKGROUND", (0,1), (-1,1), colors.HexColor("#111827")),
-        ("TEXTCOLOR", (0,0), (-1,0), colors.HexColor("#6B7280")),
-        ("TEXTCOLOR", (0,1), (-1,1), LIGHT),
-        ("FONTNAME",  (0,0), (-1,0), "Helvetica"),
-        ("FONTNAME",  (0,1), (-1,1), "Helvetica-Bold"),
-        ("FONTSIZE",  (0,0), (-1,0), 7),
-        ("FONTSIZE",  (0,1), (-1,1), 14),
-        ("ALIGN",     (0,0), (-1,-1), "CENTER"),
-        ("VALIGN",    (0,0), (-1,-1), "MIDDLE"),
-        ("TOPPADDING",(0,0),(-1,-1), 6),
-        ("BOTTOMPADDING",(0,0),(-1,-1), 6),
-        ("GRID",      (0,0), (-1,-1), 0.5, colors.HexColor("#374151")),
+    def kpi(label, value, accent=False):
+        c = "#E23E3E" if accent else "#F9FAFB"
+        return f"<div style='background:#1F2937;border-left:3px solid {'#E23E3E' if accent else '#374151'};border-radius:4px;padding:12px 16px;text-align:center'><div style='font-size:0.6em;color:#6B7280;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px'>{label}</div><div style='font-size:1.8em;font-weight:800;color:{c}'>{value}</div></div>"
+
+    c1,c2,c3,c4,c5,c6,c7 = st.columns(7)
+    c1.markdown(kpi("Pases", pases_t, True), unsafe_allow_html=True)
+    c2.markdown(kpi("Recuperaciones", recup_t), unsafe_allow_html=True)
+    c3.markdown(kpi("Pérdidas", perdidas_t), unsafe_allow_html=True)
+    c4.markdown(kpi("Ratio P/P", ratio), unsafe_allow_html=True)
+    c5.markdown(kpi("Remates", remates_t), unsafe_allow_html=True)
+    c6.markdown(kpi("Goles", goles_t, goles_t > 0), unsafe_allow_html=True)
+    c7.markdown(kpi("Faltas", faltas_t), unsafe_allow_html=True)
+
+    st.markdown("<div style='margin:20px 0'></div>", unsafe_allow_html=True)
+
+    col_izq, col_der = st.columns(2)
+    with col_izq:
+        st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin-bottom:8px'>Mapa de pases</p>", unsafe_allow_html=True)
+        fig1 = grafico_pases(df_p)
+        st.pyplot(fig1)
+    with col_der:
+        st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin-bottom:8px'>Zonas de actividad</p>", unsafe_allow_html=True)
+        fig2 = grafico_heatmap(df_p)
+        st.pyplot(fig2)
+
+    st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin:20px 0 8px 0'>Protagonistas del partido</p>", unsafe_allow_html=True)
+    fig3 = grafico_protagonistas(df_p, pos_map)
+    st.pyplot(fig3)
+
+    st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin:20px 0 8px 0'>Actividad por minuto</p>", unsafe_allow_html=True)
+    fig4 = grafico_actividad(df_p)
+    st.pyplot(fig4)
+
+# ── Generar PDF ───────────────────────────────────────────────────────────────
+def generar_pdf(df_p, rival, condicion, resultado, pos_map):
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                             leftMargin=1.5*cm, rightMargin=1.5*cm,
+                             topMargin=1.5*cm, bottomMargin=1.5*cm)
+    styles = getSampleStyleSheet()
+    DARK   = colors.HexColor("#111827")
+    ACCENT = colors.HexColor("#E23E3E")
+    LIGHT  = colors.HexColor("#F9FAFB")
+    MUTED  = colors.HexColor("#6B7280")
+
+    section_style = ParagraphStyle("sec", fontSize=11, fontName="Helvetica-Bold",
+                                    textColor=ACCENT, spaceBefore=14, spaceAfter=6)
+    body_style    = ParagraphStyle("body", fontSize=9, fontName="Helvetica",
+                                    textColor=LIGHT, spaceAfter=4)
+
+    story = []
+
+    # Header
+    header_content = Paragraph(
+        "<b>Club Atlético Estrella de Berisso</b><br/>Reporte Post-Partido",
+        ParagraphStyle("h", fontSize=14, fontName="Helvetica-Bold", textColor=LIGHT, leading=18))
+    if os.path.exists(ESCUDO_PATH):
+        row = [[RLImage(ESCUDO_PATH, width=1.4*cm, height=1.4*cm), header_content]]
+    else:
+        row = [["", header_content]]
+    ht = Table(row, colWidths=[2*cm, 14*cm])
+    ht.setStyle(TableStyle([
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+        ("BACKGROUND",(0,0),(-1,-1),colors.HexColor("#1F2937")),
+        ("LEFTPADDING",(0,0),(-1,-1),10),
+        ("TOPPADDING",(0,0),(-1,-1),10),
+        ("BOTTOMPADDING",(0,0),(-1,-1),10),
     ]))
-    story.append(kpi_table)
+    story.append(ht)
+    story.append(Spacer(1, 0.3*cm))
+    story.append(HRFlowable(width="100%", thickness=1, color=ACCENT))
+    story.append(Spacer(1, 0.2*cm))
+
+    partido_txt = f"<b>Fecha {num_fecha}</b>  ·  Estrella de Berisso vs {rival}  ·  {condicion}"
+    if resultado: partido_txt += f"  ·  <b>{resultado}</b>"
+    story.append(Paragraph(partido_txt, body_style))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#374151")))
+    story.append(Spacer(1, 0.3*cm))
+
+    # KPIs
+    pases_t    = len(df_p[df_p["Event"] == "pase"])
+    recup_t    = len(df_p[df_p["Event"] == "recuperacion"])
+    perdidas_t = len(df_p[df_p["Event"] == "perdida"])
+    remates_t  = len(df_p[df_p["Event"] == "remate"])
+    goles_t    = len(df_p[df_p["Event"] == "gol"])
+    faltas_t   = len(df_p[df_p["Event"] == "falta cometida"])
+    ratio      = str(round(pases_t / perdidas_t, 1)) if perdidas_t > 0 else "—"
+
+    kd = [["Pases","Recuperaciones","Pérdidas","Ratio P/P","Remates","Goles","Faltas"],
+          [str(pases_t),str(recup_t),str(perdidas_t),ratio,str(remates_t),str(goles_t),str(faltas_t)]]
+    kt = Table(kd, colWidths=[2.6*cm]*7)
+    kt.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#1F2937")),
+        ("BACKGROUND",(0,1),(-1,1),colors.HexColor("#0D1117")),
+        ("TEXTCOLOR",(0,0),(-1,0),MUTED),
+        ("TEXTCOLOR",(0,1),(-1,1),LIGHT),
+        ("FONTNAME",(0,0),(-1,0),"Helvetica"),
+        ("FONTNAME",(0,1),(-1,1),"Helvetica-Bold"),
+        ("FONTSIZE",(0,0),(-1,0),7),
+        ("FONTSIZE",(0,1),(-1,1),14),
+        ("ALIGN",(0,0),(-1,-1),"CENTER"),
+        ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+        ("TOPPADDING",(0,0),(-1,-1),6),
+        ("BOTTOMPADDING",(0,0),(-1,-1),6),
+        ("GRID",(0,0),(-1,-1),0.5,colors.HexColor("#374151")),
+    ]))
+    story.append(kt)
     story.append(Spacer(1, 0.4*cm))
 
-    # Sección ofensiva
-    story.append(Paragraph("Análisis ofensivo", section_style))
-    img_pases = grafico_pases(df_p)
-    story.append(RLImage(img_pases, width=17*cm, height=11.7*cm))
-    story.append(Spacer(1, 0.3*cm))
+    # Gráficos
+    for titulo, fig_func in [
+        ("Análisis de pases", lambda: grafico_pases(df_p)),
+        ("Zonas de actividad", lambda: grafico_heatmap(df_p)),
+    ]:
+        story.append(Paragraph(titulo, section_style))
+        fig = fig_func()
+        buf2 = fig_to_buf(fig)
+        story.append(RLImage(buf2, width=17*cm, height=11.7*cm))
+        story.append(Spacer(1, 0.3*cm))
 
-    # Sección defensiva
-    story.append(Paragraph("Zonas de actividad", section_style))
-    img_heat = grafico_heatmap(df_p)
-    story.append(RLImage(img_heat, width=17*cm, height=11.7*cm))
-    story.append(Spacer(1, 0.3*cm))
-
-    # Protagonistas
     story.append(Paragraph("Protagonistas del partido", section_style))
-    img_top = grafico_protagonistas(df_p, pos_map)
-    story.append(RLImage(img_top, width=17*cm, height=5.7*cm))
+    fig3 = grafico_protagonistas(df_p, pos_map)
+    buf3 = fig_to_buf(fig3)
+    story.append(RLImage(buf3, width=17*cm, height=5.5*cm))
     story.append(Spacer(1, 0.3*cm))
 
-    # Actividad por minuto
     story.append(Paragraph("Actividad por minuto", section_style))
-    img_act = grafico_actividad(df_p)
-    story.append(RLImage(img_act, width=17*cm, height=5*cm))
+    fig4 = grafico_actividad(df_p)
+    buf4 = fig_to_buf(fig4)
+    story.append(RLImage(buf4, width=17*cm, height=4.5*cm))
     story.append(Spacer(1, 0.3*cm))
 
-    # Sugerencias automáticas
+    # Observaciones
     story.append(Paragraph("Observaciones del analista", section_style))
     obs = []
-    if ratio != "—" and float(ratio) < 3:
-        obs.append("• Ratio pase/pérdida bajo. Se recomienda trabajar la salida desde el fondo y los circuitos de circulación.")
-    elif ratio != "—" and float(ratio) >= 5:
-        obs.append("• Buen cuidado de la pelota. El equipo mantuvo la posesión con criterio.")
+    if ratio != "—":
+        r = float(ratio)
+        if r < 3:   obs.append("• Ratio pase/pérdida bajo. Trabajar salida desde el fondo y circuitos de circulación.")
+        elif r >= 5: obs.append("• Buen cuidado de la pelota. El equipo circuló con criterio.")
     despejes = len(df_p[df_p["Event"] == "despeje"])
-    if despejes > 15:
-        obs.append(f"• {despejes} despejes registrados. El equipo estuvo bajo presión. Revisar el bloque defensivo.")
-    if faltas_t > 8:
-        obs.append(f"• {faltas_t} faltas cometidas. Riesgo disciplinario elevado.")
-    if remates_t >= 3:
-        obs.append(f"• {remates_t} remates generados. {'Buena llegada al área rival.' if remates_t >= 5 else 'Llegada escasa al área rival.'}")
-    if not obs:
-        obs.append("• Sin alertas tácticas relevantes en este partido.")
-
+    if despejes > 15: obs.append(f"• {despejes} despejes. El equipo soportó presión. Revisar bloque defensivo.")
+    if faltas_t > 8:  obs.append(f"• {faltas_t} faltas cometidas. Riesgo disciplinario elevado.")
+    if remates_t > 0: obs.append(f"• {remates_t} remates generados. {'Buena llegada al área.' if remates_t >= 5 else 'Llegada escasa al área rival.'}")
+    if not obs:       obs.append("• Sin alertas tácticas relevantes en este partido.")
     for o in obs:
         story.append(Paragraph(o, body_style))
 
     story.append(Spacer(1, 0.5*cm))
     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#374151")))
     story.append(Paragraph("IAO Football Analytics · Transformo datos en decisiones.",
-                            ParagraphStyle("footer", fontSize=7, textColor=MUTED,
-                                           alignment=TA_CENTER, spaceBefore=6)))
-
+                            ParagraphStyle("f", fontSize=7, textColor=MUTED, alignment=TA_CENTER, spaceBefore=6)))
     doc.build(story)
     buf.seek(0)
     return buf
 
-# ── UI ────────────────────────────────────────────────────────────────────────
-if st.button("📄 Generar reporte PDF", type="primary"):
-    with st.spinner("Generando reporte..."):
-        pdf_buf = generar_pdf(df_p, fixture_row, rival, condicion, resultado, pos_map)
+# ── UI principal ──────────────────────────────────────────────────────────────
+col_prev, col_gen = st.columns([1, 1])
 
-    nombre_archivo = f"reporte_estrella_fecha{num_fecha}_vs_{rival.replace(' ','_').lower()}.pdf"
-    st.download_button(
-        label="⬇ Descargar PDF",
-        data=pdf_buf,
-        file_name=nombre_archivo,
-        mime="application/pdf",
-    )
-    st.success(f"Reporte generado — {nombre_archivo}")
+with col_prev:
+    if st.button("👁 Ver preview", use_container_width=True):
+        st.session_state["mostrar_preview"] = True
+
+with col_gen:
+    if st.button("📄 Generar PDF", type="primary", use_container_width=True):
+        with st.spinner("Generando PDF..."):
+            pdf_buf = generar_pdf(df_p, rival, condicion, resultado, pos_map)
+        nombre = f"reporte_estrella_f{num_fecha}_vs_{rival.replace(' ','_').lower()}.pdf"
+        st.download_button("⬇ Descargar PDF", data=pdf_buf,
+                           file_name=nombre, mime="application/pdf")
+        st.success(f"Listo — {nombre}")
+
+if st.session_state.get("mostrar_preview"):
+    st.markdown("<div style='margin:20px 0;height:1px;background:#1F2937'></div>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin-bottom:16px'>Preview del reporte</p>", unsafe_allow_html=True)
+    mostrar_preview(df_p, pos_map)
