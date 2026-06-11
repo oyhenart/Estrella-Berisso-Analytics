@@ -132,34 +132,65 @@ def grafico_pases(df_p, ax=None):
     draw_pitch(ax)
 
     completos = 0; incompletos = 0
+    flows = {}
     for _, row in pases.iterrows():
         x1, y1 = float(row["X"]), float(row["Y"])
         x2, y2 = row["X2"], row["Y2"]
         if pd.isna(x1) or pd.isna(y1): continue
+        
+        idx = row.name
+        sig_event = ""
+        if idx + 1 < len(df_p):
+            sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
+        complete = sig_event not in ["perdida",""]
+        
+        if complete: completos += 1
+        else: incompletos += 1
+
         if pd.notna(x2) and pd.notna(y2):
             x2, y2 = float(x2), float(y2)
-            # ver si el siguiente evento es recuperacion (pase completo)
-            idx = row.name
-            sig_event = ""
-            if idx + 1 < len(df_p):
-                sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
-            color = "#2E6F40" if sig_event not in ["perdida",""] else "#C93B3B"
-            if color == "#2E6F40": completos += 1
-            else: incompletos += 1
-            dx, dy = x2 - x1, y2 - y1
+            # Mapa a cuadrícula táctica de 4x3
+            nx_grid, ny_grid = 4, 3
+            dx_grid, dy_grid = W / nx_grid, H / ny_grid
+            
+            xi1 = min(int(x1 / dx_grid), nx_grid - 1)
+            yi1 = min(int(y1 / dy_grid), ny_grid - 1)
+            xi2 = min(int(x2 / dx_grid), nx_grid - 1)
+            yi2 = min(int(y2 / dy_grid), ny_grid - 1)
+            
+            key = (xi1, yi1, xi2, yi2, complete)
+            flows[key] = flows.get(key, 0) + 1
+        else:
+            # pase sin destino
+            pass
+
+    # Trazar flujos de pases consolidados
+    nx_grid, ny_grid = 4, 3
+    dx_grid, dy_grid = W / nx_grid, H / ny_grid
+    for (xi1, yi1, xi2, yi2, complete), count in flows.items():
+        cx1 = (xi1 + 0.5) * dx_grid
+        cy1 = (yi1 + 0.5) * dy_grid
+        cx2 = (xi2 + 0.5) * dx_grid
+        cy2 = (yi2 + 0.5) * dy_grid
+        
+        color = "#2E6F40" if complete else "#C93B3B"
+        
+        if xi1 == xi2 and yi1 == yi2:
+            # Pases dentro de la misma zona
+            ax.plot(cx1, cy1, "o", color=color, markersize=3 + count * 0.8, alpha=0.6)
+        else:
+            # Pases entre zonas, grosor proporcional
+            lw = min(1.0 + count * 0.8, 7.0)
             ax.annotate("",
-                xy=(x2, y2), xytext=(x1, y1),
+                xy=(cx2, cy2), xytext=(cx1, cy1),
                 arrowprops=dict(
                     arrowstyle="-|>",
                     color=color,
-                    lw=1.5,
-                    mutation_scale=10,
-                ),
+                    lw=lw,
+                    mutation_scale=10 + lw,
+                    alpha=0.7
+                )
             )
-        else:
-            # pase sin destino — punto simple
-            ax.plot(x1, y1, "o", color="#C93B3B", markersize=4, alpha=0.6)
-            incompletos += 1
 
     legend = [
         mpatches.Patch(color="#2E6F40", label=f"Pase completo ({completos})"),
@@ -189,16 +220,20 @@ def grafico_heatmap(df_p, ax=None):
             yi = min(int(float(row["Y"]) / H * ny), ny-1)
             grid[yi, xi] += 1
         except: pass
-    cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-        "heat", [(0,"none"),(0.01,"#FFCC0044"),(0.5,"#FF660088"),(1,"#A83232CC")])
+        
+    # Mask values with 0 count to np.nan for transparency
+    grid_masked = np.where(grid == 0, np.nan, grid)
+    
     xc = [(xs[i]+xs[i+1])/2 for i in range(nx)]
     yc = [(ys[i]+ys[i+1])/2 for i in range(ny)]
-    ax.pcolormesh(xc, yc, grid, cmap=cmap, shading="nearest", zorder=2, alpha=0.8)
+    
+    cmap = plt.cm.YlOrRd.copy()
+    cmap.set_bad(alpha=0)
+    
+    ax.pcolormesh(xc, yc, grid_masked, cmap=cmap, shading="nearest", zorder=2, alpha=0.7)
     if is_standalone:
         ax.set_title("Zonas de actividad", color="#3D2C24", fontsize=11, pad=8, fontfamily="serif")
-    return fig
-
-# ── Gráfico 3: Protagonistas ──────────────────────────────────────────────────
+    return fig# ── Gráfico 3: Protagonistas ──────────────────────────────────────────────────
 def grafico_protagonistas(df_p, pos_map, axes=None):
     jugadores_top = []
     for jugador in df_p["Player"].unique():
@@ -220,8 +255,13 @@ def grafico_protagonistas(df_p, pos_map, axes=None):
         ax = axes[i]
         ax.set_facecolor("#F2EEE7")
         dj   = df_p[df_p["Player"] == jugador]
-        vals = [len(dj[dj["Event"] == m]) for m in met[:4]]
-        labs = [m.capitalize() for m in met[:4]]
+        
+        # Sort ascending to make highest values appear on top in barh
+        pairs = [(len(dj[dj["Event"] == m]), m.capitalize()) for m in met[:4]]
+        pairs.sort(key=lambda x: x[0])
+        vals = [p[0] for p in pairs]
+        labs = [p[1] for p in pairs]
+        
         color = COLOR_POS.get(pos, "#7A6A5E")
         bars = ax.barh(labs, vals, color=color, alpha=0.85)
         for bar, val in zip(bars, vals):
@@ -246,7 +286,28 @@ def grafico_actividad(df_p, ax=None):
         fig = ax.figure
     ax.set_facecolor("#F2EEE7")
     act = df_p.groupby("Mins")["Event"].count()
-    ax.bar(act.index.astype(float), act.values, color="#7A6A5E", width=0.8)
+    bars = ax.bar(act.index.astype(float), act.values, color="#7A6A5E", width=0.8)
+    
+    # Highlight top 2 active minutes
+    if len(act) > 0:
+        top_mins = act.nlargest(2)
+        for m_min, m_val in top_mins.items():
+            events_m = df_p[df_p["Mins"] == m_min]
+            if not events_m.empty:
+                ev_counts = events_m["Event"].value_counts()
+                top_ev = ev_counts.index[0]
+                top_cnt = ev_counts.iloc[0]
+                
+                # Highlight bar color to red
+                for bar in bars:
+                    if abs(bar.get_x() + bar.get_width()/2 - float(m_min)) < 0.5:
+                        bar.set_color("#A83232")
+                
+                # Annotate above the bar
+                ax.text(float(m_min), m_val + 0.3, f"Min {int(float(m_min))}\n{top_ev.title()} ({top_cnt})",
+                        color="#A83232", fontsize=7.5, ha="center", va="bottom", fontweight="bold",
+                        bbox=dict(boxstyle="round,pad=0.2", facecolor="#FAF7F2", edgecolor="#A83232", lw=0.5, alpha=0.9))
+
     ax.axvline(45, color="#A83232", linestyle="--", linewidth=1, alpha=0.7, label="HT")
     ax.set_xlabel("Minuto", color="#3D2C24", fontsize=9, fontfamily="serif")
     ax.set_ylabel("Eventos", color="#3D2C24", fontsize=9, fontfamily="serif")
@@ -259,11 +320,12 @@ def grafico_actividad(df_p, ax=None):
         fig.tight_layout()
     return fig
 
+
 # ── Generar Imagen ────────────────────────────────────────────────────────────
 def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
     buf = io.BytesIO()
-    # Formato vertical de alta resolución (estilo infografía crema): 12" x 18"
-    fig = plt.figure(figsize=(12, 18), facecolor="#FAF7F2")
+    # Formato vertical de alta resolución (estilo infografía crema): 12" x 22"
+    fig = plt.figure(figsize=(12, 22), facecolor="#FAF7F2")
     
     # Calcular KPIs
     pases_t    = len(df_p[df_p["Event"] == "pase"])
@@ -291,8 +353,10 @@ def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
         try:
             from PIL import Image as PILImage
             img = PILImage.open(ESCUDO_PATH)
-            logo_ax = fig.add_axes([0.05, 0.91, 0.05, 0.05])
+            # Eje cuadrado 1:1 para el escudo
+            logo_ax = fig.add_axes([0.05, 0.92, 0.05, 0.027])
             logo_ax.imshow(img)
+            logo_ax.set_aspect("equal")
             logo_ax.axis("off")
         except Exception:
             pass
@@ -311,24 +375,24 @@ def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
     # Línea divisoria roja
     fig.add_axes([0.05, 0.89, 0.90, 0.002], facecolor="#8A2525").axis("off")
 
-    # Títulos de la Fila 1
+    # Títulos de la Fila 1 (Mapa Pases, Estadísticas, Heatmap)
     fig.text(0.05, 0.865, "Mapa de Pases", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
-    fig.text(0.415, 0.865, "Métricas", color="#3D2C24", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.415, 0.865, "Estadísticas", color="#3D2C24", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
     fig.text(0.62, 0.865, "Zonas de Actividad", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
-    # 2. Fila 1 Subplots: Mapa Pases, Tabla KPIs, Heatmap
-    ax_pases = fig.add_axes([0.05, 0.48, 0.33, 0.37])
-    ax_table = fig.add_axes([0.415, 0.48, 0.17, 0.37])
-    ax_heatmap = fig.add_axes([0.62, 0.48, 0.33, 0.37])
+    # 2. Fila 1 Subplots: Mapa Pases (izq), Tabla KPIs (centro), Heatmap (der)
+    ax_pases = fig.add_axes([0.05, 0.57, 0.33, 0.28])
+    ax_table = fig.add_axes([0.415, 0.57, 0.17, 0.28])
+    ax_heatmap = fig.add_axes([0.62, 0.57, 0.33, 0.28])
     
     grafico_pases(df_p, ax=ax_pases)
     grafico_heatmap(df_p, ax=ax_heatmap)
 
     # Dibujar tabla vertical de Estadísticas
     ax_table.axis("off")
-    ax_table.text(0.05, 0.92, "Métrica", color="#3D2C24", fontsize=11, fontweight="bold", ha="left", fontfamily="monospace")
-    ax_table.text(0.95, 0.92, "Valor", color="#3D2C24", fontsize=11, fontweight="bold", ha="right", fontfamily="monospace")
-    ax_table.plot([0.01, 0.99], [0.85, 0.85], color="#7A6A5E", linewidth=1.5)
+    ax_table.text(0.05, 0.88, "Métrica", color="#3D2C24", fontsize=10, fontweight="bold", ha="left", fontfamily="monospace")
+    ax_table.text(0.95, 0.88, "Valor", color="#3D2C24", fontsize=10, fontweight="bold", ha="right", fontfamily="monospace")
+    ax_table.plot([0.01, 0.99], [0.82, 0.82], color="#7A6A5E", linewidth=1.5)
     
     kpis_table_data = [
         ("Pases", str(pases_t), True),
@@ -339,7 +403,7 @@ def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
         ("Goles", str(goles_t), goles_t > 0),
         ("Faltas", str(faltas_t), False)
     ]
-    y_val = 0.73
+    y_val = 0.70
     for label, val, accent in kpis_table_data:
         ax_table.text(0.05, y_val, label, color="#3D2C24", fontsize=10, ha="left", fontfamily="monospace")
         val_color = "#A83232" if accent else "#3D2C24"
@@ -347,24 +411,27 @@ def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
         ax_table.plot([0.01, 0.99], [y_val - 0.05, y_val - 0.05], color="#7A6A5E", linewidth=0.5, linestyle=":")
         y_val -= 0.10
 
-    # Títulos de la Fila 2
-    fig.text(0.05, 0.435, "Actividad por Minuto", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
-    fig.text(0.52, 0.435, "Protagonistas del Partido", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    # Título Fila 2: Actividad por Minuto (Ancho Completo)
+    fig.text(0.05, 0.535, "Actividad por Minuto", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
-    # 3. Fila 2 Subplots: Actividad y Protagonistas
-    ax_act = fig.add_axes([0.05, 0.20, 0.43, 0.22])
-    ax_p1 = fig.add_axes([0.52, 0.20, 0.13, 0.22])
-    ax_p2 = fig.add_axes([0.67, 0.20, 0.13, 0.22])
-    ax_p3 = fig.add_axes([0.82, 0.20, 0.13, 0.22])
-    
+    # 3. Fila 2 Subplot: Actividad
+    ax_act = fig.add_axes([0.05, 0.39, 0.90, 0.13])
     grafico_actividad(df_p, ax=ax_act)
+
+    # Título Fila 3: Protagonistas del Partido
+    fig.text(0.05, 0.345, "Protagonistas del Partido", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+
+    # 4. Fila 3 Subplots: Protagonistas (3 mini gráficos más anchos abajo)
+    ax_p1 = fig.add_axes([0.05, 0.20, 0.27, 0.13])
+    ax_p2 = fig.add_axes([0.365, 0.20, 0.27, 0.13])
+    ax_p3 = fig.add_axes([0.68, 0.20, 0.27, 0.13])
     grafico_protagonistas(df_p, pos_map, axes=[ax_p1, ax_p2, ax_p3])
 
-    # Título de la Fila 3
+    # Título Fila 4: Observaciones
     fig.text(0.05, 0.165, "Observaciones del Analista", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
-    # 4. Fila 3: Observaciones
-    obs_ax = fig.add_axes([0.05, 0.06, 0.90, 0.09])
+    # 5. Fila 4: Observaciones
+    obs_ax = fig.add_axes([0.05, 0.07, 0.90, 0.085])
     obs_ax.axis("off")
     import matplotlib.patches as patches
     rect_obs = patches.FancyBboxPatch(
@@ -383,9 +450,9 @@ def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
         y_pos -= 0.22
 
     # Línea divisoria inferior
-    fig.add_axes([0.05, 0.045, 0.90, 0.001], facecolor="#7A6A5E").axis("off")
+    fig.add_axes([0.05, 0.055, 0.90, 0.001], facecolor="#7A6A5E").axis("off")
 
-    # 5. Firma / Pie de página
+    # 6. Firma / Pie de página
     fig.text(0.05, 0.024, "IAO Footbal Analytics", color="#8A2525", fontsize=12, ha="left", va="center", fontweight="bold", fontfamily="serif")
     fig.text(0.05, 0.012, "video-analisis-app.streamlit.app", color="#7A6A5E", fontsize=9, ha="left", va="center", fontfamily="serif")
     
