@@ -292,9 +292,52 @@ def detectar_conexiones_optimizada(df_partido):
 st.divider()
 st.subheader("🕸️ Red de pases")
 
-# La red se calcula con la base completa (todo el equipo) para no perder conexiones
+def obtener_eventos_antes_del_primer_cambio(df_partido):
+    # Ordenar cronológicamente de forma estricta
+    df_partido = df_partido.sort_values(by=["mitad", "Mins", "Secs"]).reset_index(drop=True)
+    
+    jugadores_unicos = []
+    indice_cambio = len(df_partido)
+    
+    for idx, fila in df_partido.iterrows():
+        jugador = fila["Player"]
+        if pd.isna(jugador):
+            continue
+        
+        if jugador not in jugadores_unicos:
+            if len(jugadores_unicos) == 11:
+                # El jugador número 12 es el que entra (primer cambio)
+                indice_cambio = idx
+                break
+            jugadores_unicos.append(jugador)
+            
+    df_recortado = df_partido.iloc[:indice_cambio].copy()
+    
+    info_cambio = None
+    if indice_cambio < len(df_partido):
+        fila_cambio = df_partido.iloc[indice_cambio]
+        info_cambio = {
+            "jugador_entra": fila_cambio["Player"],
+            "minuto": int(fila_cambio["Mins"]),
+            "segundo": int(fila_cambio["Secs"]),
+            "mitad": int(fila_cambio["mitad"])
+        }
+        
+    return df_recortado, jugadores_unicos, info_cambio
+
 if not df_base.empty:
-    conexiones = detectar_conexiones_optimizada(df_base)
+    # Si se seleccionó un partido específico, mostramos solo los titulares hasta el primer cambio
+    if fecha_sel != "Todos los partidos":
+        df_red, titulares, info_cambio = obtener_eventos_antes_del_primer_cambio(df_base)
+        if info_cambio:
+            st.info(f"💡 Red de pases calculada con los **11 titulares** hasta el primer cambio (Entra **{info_cambio['jugador_entra']}** al min {info_cambio['minuto']}:{info_cambio['segundo']} - Mitad {info_cambio['mitad']}).")
+        else:
+            st.info("💡 Red de pases calculada con los **11 titulares** (no se registraron cambios).")
+    else:
+        df_red = df_base.copy()
+        st.warning("⚠️ Al mostrar 'Todos los partidos', la red de pases incluye a todos los jugadores que participaron en el conjunto de partidos.")
+
+    conexiones = detectar_conexiones_optimizada(df_red)
 
     if conexiones.empty:
         st.info("No se detectaron conexiones de pase.")
@@ -302,7 +345,7 @@ if not df_base.empty:
         pitch, fig, ax = crear_cancha()
 
         # Posición promedio basada estrictamente en los pases hechos para mayor precisión táctica
-        pases_validos = df_base[df_base["Event"] == "pase"]
+        pases_validos = df_red[df_red["Event"] == "pase"]
         posiciones = pases_validos.groupby("Player").agg({"X": "mean", "Y": "mean"}).reset_index()
 
         conexiones_count = conexiones.groupby(["origen", "destino"]).size().reset_index(name="cantidad")
