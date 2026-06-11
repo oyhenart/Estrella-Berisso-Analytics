@@ -56,6 +56,7 @@ def render_sidebar(base_path):
     st.sidebar.page_link("pages/4_Fixture.py",        label="🗓️ Fixture")
     st.sidebar.page_link("pages/5_Alertas.py",        label="🚨 Alertas")
     st.sidebar.page_link("pages/6_Videos.py",         label="🎬 Videos")
+    st.sidebar.page_link("pages/7_Reporte.py", label="📄 Reporte PDF")
 
 
 def render_header(subtitle, title):
