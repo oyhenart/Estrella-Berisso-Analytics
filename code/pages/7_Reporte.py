@@ -100,11 +100,18 @@ def draw_pitch(ax):
     ax.plot([0,0],[(H-ARCO)/2,(H+ARCO)/2], color="#7A6A5E", linewidth=3.5)
     ax.plot([W,W],[(H-ARCO)/2,(H+ARCO)/2], color="#7A6A5E", linewidth=3.5)
 
-# ── Gráfico 1: Mapa de pases Último Tercio (Mitad de cancha) ──────────────────
+# ── Gráfico 1: Mapa de pases Último Tercio ────────────────────────────────────
 def grafico_pases_ultimo_tercio(df_p, ax):
     draw_pitch(ax)
-    # Cortamos la cancha para mostrar solo de mitad hacia adelante
-    ax.set_xlim(50, 102) 
+    
+    # Ajustamos el recorte visual
+    ax.set_xlim(60, 102)
+    ax.set_ylim(102, -2)
+    
+    # Dibujamos un marco para cerrar el recorte
+    ax.add_patch(mpatches.Rectangle((60, -2), 42, 104, fill=False, edgecolor="#7A6A5E", lw=2, zorder=10))
+    # Línea punteada marcando el inicio del último tercio (66.6)
+    ax.plot([66.6, 66.6], [0, 100], color="#7A6A5E", linestyle=":", linewidth=1.2, zorder=2)
     
     pases = df_p[df_p["Event"] == "pase"].copy()
     for col in ["X","Y","X2","Y2"]:
@@ -118,8 +125,8 @@ def grafico_pases_ultimo_tercio(df_p, ax):
         
         if pd.isna(x1) or pd.isna(y1) or pd.isna(x2) or pd.isna(y2): continue
         
-        # Filtro: Solo pases que inician o terminan en el último tercio (X >= 66.6)
-        if x1 < 66.6 and float(x2) < 66.6:
+        # Filtro estricto: Solo pases que NACEN en el último tercio
+        if x1 < 66.6:
             continue
             
         sig_event = ""
@@ -149,20 +156,23 @@ def grafico_pases_ultimo_tercio(df_p, ax):
 # ── Gráfico 2: Heatmap Presión en Campo Rival (Mitad de cancha) ───────────────
 def grafico_presion_rival(df_p, ax):
     draw_pitch(ax)
+    
     ax.set_xlim(50, 102)
+    ax.set_ylim(102, -2)
+    # Marco de recorte para la mitad de cancha
+    ax.add_patch(mpatches.Rectangle((50, -2), 52, 104, fill=False, edgecolor="#7A6A5E", lw=2, zorder=10))
     
     nx, ny = 13, 9
     xs = np.linspace(0, W, nx+1); ys = np.linspace(0, H, ny+1)
     grid = np.zeros((ny, nx))
     
-    # Filtramos eventos que demuestren presión (recuperaciones, faltas)
     eventos_presion = ["recuperacion", "falta cometida"]
     df_presion = df_p[df_p["Event"].isin(eventos_presion)].copy()
     
     for _, row in df_presion.iterrows():
         try:
             x_val = float(row["X"])
-            if x_val < 50: continue # Solo nos interesa la presión alta (campo rival)
+            if x_val < 50: continue
             xi = min(int(x_val / W * nx), nx-1)
             yi = min(int(float(row["Y"]) / H * ny), ny-1)
             grid[yi, xi] += 1
@@ -222,15 +232,14 @@ def grafico_pases_largos(df_p, ax):
         if pd.isna(x1) or pd.isna(y1) or pd.isna(x2) or pd.isna(y2): continue
         x2, y2 = float(x2), float(y2)
         
-        # Filtro: Nace antes del último tercio, termina en el último tercio
         distancia = math.sqrt((x2-x1)**2 + (y2-y1)**2)
-        if x2 >= 66.6 and distancia >= 30: # 30 unidades como pase largo
+        if x2 >= 66.6 and distancia >= 30: 
             sig_event = ""
             if idx + 1 < len(df_p):
                 sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
             complete = sig_event not in ["perdida",""]
             
-            color = "#1D4ED8" if complete else "#9CA3AF" # Azul si completa, gris si falla
+            color = "#1D4ED8" if complete else "#9CA3AF"
             ax.annotate("",
                 xy=(x2, y2), xytext=(x1, y1),
                 arrowprops=dict(arrowstyle="-|>", color=color, lw=1.5, alpha=0.8)
@@ -240,9 +249,12 @@ def grafico_pases_largos(df_p, ax):
 # ── Gráfico 5: Mapa de Remates en el Área ─────────────────────────────────────
 def grafico_remates(df_p, ax):
     draw_pitch(ax)
-    # Hacemos Zoom al área grande (X entre 75 y 100, Y entre 15 y 85)
-    ax.set_xlim(75, 102)
-    ax.set_ylim(85, 15)
+    
+    # Mostramos toda la mitad de cancha para no perder la referencia del área
+    ax.set_xlim(50, 102)
+    ax.set_ylim(102, -2)
+    # Marco de recorte para la mitad de cancha
+    ax.add_patch(mpatches.Rectangle((50, -2), 52, 104, fill=False, edgecolor="#7A6A5E", lw=2, zorder=10))
     
     remates = df_p[df_p["Event"].isin(["remate", "gol"])].copy()
     for col in ["X","Y"]:
@@ -297,7 +309,7 @@ def generar_imagen(df_p, rival, condicion, resultado, num_fecha):
     fig.add_axes([0.05, 0.89, 0.90, 0.002], facecolor="#8A2525").axis("off")
 
     # Títulos Fila 1
-    fig.text(0.05, 0.865, "Pases al Último Tercio", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.05, 0.865, "Pases en el Último Tercio", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
     fig.text(0.415, 0.865, "Estadísticas", color="#3D2C24", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
     fig.text(0.62, 0.865, "Presión en Campo Rival", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
