@@ -78,7 +78,7 @@ st.markdown(f"""
 # ── Constantes de cancha ──────────────────────────────────────────────────────
 W, H = 100, 100
 AG_X=12.7; AG_Y=44.8; AC_X=4.2; AC_Y=20.4; ARCO=8.1; CR=7.0
-PITCH_BG = "#2D6A4F"
+PITCH_BG = "#F2EEE7"
 
 METRICAS_POS = {
     "Arquero":       ["despeje","recuperacion","pase"],
@@ -86,27 +86,27 @@ METRICAS_POS = {
     "Mediocampista": ["pase","recuperacion","conduccion"],
     "Delantero":     ["remate","gol","centro","conduccion"],
 }
-COLOR_POS = {"Arquero":"#60A5FA","Defensor":"#34D399",
-             "Mediocampista":"#FCD34D","Delantero":"#F87171"}
+COLOR_POS = {"Arquero":"#5D8AA8","Defensor":"#4F7942",
+             "Mediocampista":"#C2B280","Delantero":"#C36262"}
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def draw_pitch(ax):
     ax.set_facecolor(PITCH_BG)
     ax.set_xlim(-2, 102); ax.set_ylim(102, -2)
     ax.set_aspect("equal"); ax.axis("off")
-    kw = dict(color="white", linewidth=1.2)
+    kw = dict(color="#7A6A5E", linewidth=1.5)
     ax.plot([0,W,W,0,0],[0,0,H,H,0], **kw)
     ax.plot([W/2,W/2],[0,H], **kw)
     ax.add_patch(plt.Circle((W/2,H/2), CR, fill=False, **kw))
-    ax.plot(W/2, H/2, "o", color="white", markersize=2)
+    ax.plot(W/2, H/2, "o", color="#7A6A5E", markersize=3)
     for x0,x1 in [(0,AG_X),(W-AG_X,W)]:
         ax.plot([x0,x1,x1,x0,x0],
                 [(H-AG_Y)/2,(H-AG_Y)/2,(H+AG_Y)/2,(H+AG_Y)/2,(H-AG_Y)/2], **kw)
     for x0,x1 in [(0,AC_X),(W-AC_X,W)]:
         ax.plot([x0,x1,x1,x0,x0],
                 [(H-AC_Y)/2,(H-AC_Y)/2,(H+AC_Y)/2,(H+AC_Y)/2,(H-AC_Y)/2], **kw)
-    ax.plot([0,0],[(H-ARCO)/2,(H+ARCO)/2], color="white", linewidth=3)
-    ax.plot([W,W],[(H-ARCO)/2,(H+ARCO)/2], color="white", linewidth=3)
+    ax.plot([0,0],[(H-ARCO)/2,(H+ARCO)/2], color="#7A6A5E", linewidth=3.5)
+    ax.plot([W,W],[(H-ARCO)/2,(H+ARCO)/2], color="#7A6A5E", linewidth=3.5)
 
 def fig_to_buf(fig):
     buf = io.BytesIO()
@@ -126,7 +126,7 @@ def grafico_pases(df_p, ax=None):
     is_standalone = ax is None
     if is_standalone:
         fig, ax = plt.subplots(figsize=(10, 6.9))
-        fig.patch.set_facecolor("#111827")
+        fig.patch.set_facecolor("#FAF7F2")
     else:
         fig = ax.figure
     draw_pitch(ax)
@@ -143,8 +143,8 @@ def grafico_pases(df_p, ax=None):
             sig_event = ""
             if idx + 1 < len(df_p):
                 sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
-            color = "#34D399" if sig_event not in ["perdida",""] else "#F87171"
-            if color == "#34D399": completos += 1
+            color = "#2E6F40" if sig_event not in ["perdida",""] else "#C93B3B"
+            if color == "#2E6F40": completos += 1
             else: incompletos += 1
             dx, dy = x2 - x1, y2 - y1
             ax.annotate("",
@@ -152,23 +152,23 @@ def grafico_pases(df_p, ax=None):
                 arrowprops=dict(
                     arrowstyle="-|>",
                     color=color,
-                    lw=1.2,
+                    lw=1.5,
                     mutation_scale=10,
                 ),
             )
         else:
             # pase sin destino — punto simple
-            ax.plot(x1, y1, "o", color="#F87171", markersize=4, alpha=0.6)
+            ax.plot(x1, y1, "o", color="#C93B3B", markersize=4, alpha=0.6)
             incompletos += 1
 
     legend = [
-        mpatches.Patch(color="#34D399", label=f"Pase completo ({completos})"),
-        mpatches.Patch(color="#F87171", label=f"Pase incompleto ({incompletos})"),
+        mpatches.Patch(color="#2E6F40", label=f"Pase completo ({completos})"),
+        mpatches.Patch(color="#C93B3B", label=f"Pase incompleto ({incompletos})"),
     ]
-    ax.legend(handles=legend, loc="upper left", framealpha=0.3,
-              facecolor="#1F2937", edgecolor="none", labelcolor="white", fontsize=8)
+    ax.legend(handles=legend, loc="upper left", framealpha=0.9,
+              facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
     if is_standalone:
-        ax.set_title("Mapa de pases", color="white", fontsize=11, pad=8)
+        ax.set_title("Mapa de pases", color="#3D2C24", fontsize=11, pad=8, fontfamily="serif")
     return fig
 
 # ── Gráfico 2: Heatmap ────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ def grafico_heatmap(df_p, ax=None):
     is_standalone = ax is None
     if is_standalone:
         fig, ax = plt.subplots(figsize=(10, 6.9))
-        fig.patch.set_facecolor("#111827")
+        fig.patch.set_facecolor("#FAF7F2")
     else:
         fig = ax.figure
     draw_pitch(ax)
@@ -190,12 +190,12 @@ def grafico_heatmap(df_p, ax=None):
             grid[yi, xi] += 1
         except: pass
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-        "heat", [(0,"none"),(0.01,"#FFFF0088"),(0.5,"#FF8C00BB"),(1,"#C80000DD")])
+        "heat", [(0,"none"),(0.01,"#FFCC0044"),(0.5,"#FF660088"),(1,"#A83232CC")])
     xc = [(xs[i]+xs[i+1])/2 for i in range(nx)]
     yc = [(ys[i]+ys[i+1])/2 for i in range(ny)]
     ax.pcolormesh(xc, yc, grid, cmap=cmap, shading="nearest", zorder=2, alpha=0.8)
     if is_standalone:
-        ax.set_title("Zonas de actividad", color="white", fontsize=11, pad=8)
+        ax.set_title("Zonas de actividad", color="#3D2C24", fontsize=11, pad=8, fontfamily="serif")
     return fig
 
 # ── Gráfico 3: Protagonistas ──────────────────────────────────────────────────
@@ -213,26 +213,26 @@ def grafico_protagonistas(df_p, pos_map, axes=None):
     is_standalone = axes is None
     if is_standalone:
         fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-        fig.patch.set_facecolor("#111827")
+        fig.patch.set_facecolor("#FAF7F2")
     else:
         fig = axes[0].figure
     for i, (jugador, pos, score, met) in enumerate(top3):
         ax = axes[i]
-        ax.set_facecolor("#1F2937")
+        ax.set_facecolor("#F2EEE7")
         dj   = df_p[df_p["Player"] == jugador]
         vals = [len(dj[dj["Event"] == m]) for m in met[:4]]
         labs = [m.capitalize() for m in met[:4]]
-        color = COLOR_POS.get(pos, "#9CA3AF")
+        color = COLOR_POS.get(pos, "#7A6A5E")
         bars = ax.barh(labs, vals, color=color, alpha=0.85)
         for bar, val in zip(bars, vals):
             ax.text(bar.get_width()+0.1, bar.get_y()+bar.get_height()/2,
-                    str(val), va="center", color="white", fontsize=9)
-        ax.set_title(f"{jugador}\n{pos or '—'}", color="white", fontsize=9, pad=6)
-        ax.tick_params(colors="white", labelsize=8)
+                    str(val), va="center", color="#3D2C24", fontsize=9, fontfamily="monospace")
+        ax.set_title(f"{jugador}\n{pos or '—'}", color="#3D2C24", fontsize=9, pad=6, fontfamily="serif")
+        ax.tick_params(colors="#3D2C24", labelsize=8)
         for sp in ax.spines.values(): sp.set_visible(False)
         ax.set_xlim(0, max(vals or [1]) * 1.35)
     if is_standalone:
-        fig.suptitle("Protagonistas del partido", color="white", fontsize=12, y=1.02)
+        fig.suptitle("Protagonistas del partido", color="#3D2C24", fontsize=12, y=1.02, fontfamily="serif")
         fig.tight_layout()
     return fig
 
@@ -241,72 +241,29 @@ def grafico_actividad(df_p, ax=None):
     is_standalone = ax is None
     if is_standalone:
         fig, ax = plt.subplots(figsize=(10, 3))
-        fig.patch.set_facecolor("#111827")
+        fig.patch.set_facecolor("#FAF7F2")
     else:
         fig = ax.figure
-    ax.set_facecolor("#1F2937")
+    ax.set_facecolor("#F2EEE7")
     act = df_p.groupby("Mins")["Event"].count()
-    ax.bar(act.index.astype(float), act.values, color="#374151", width=0.8)
-    ax.axvline(45, color="#E23E3E", linestyle="--", linewidth=1, alpha=0.7, label="HT")
-    ax.set_xlabel("Minuto", color="white", fontsize=9)
-    ax.set_ylabel("Eventos", color="white", fontsize=9)
+    ax.bar(act.index.astype(float), act.values, color="#7A6A5E", width=0.8)
+    ax.axvline(45, color="#A83232", linestyle="--", linewidth=1, alpha=0.7, label="HT")
+    ax.set_xlabel("Minuto", color="#3D2C24", fontsize=9, fontfamily="serif")
+    ax.set_ylabel("Eventos", color="#3D2C24", fontsize=9, fontfamily="serif")
     if is_standalone:
-        ax.set_title("Actividad por minuto", color="white", fontsize=11)
-    ax.tick_params(colors="white", labelsize=8)
+        ax.set_title("Actividad por minuto", color="#3D2C24", fontsize=11, fontfamily="serif")
+    ax.tick_params(colors="#3D2C24", labelsize=8)
     for sp in ax.spines.values(): sp.set_visible(False)
-    ax.legend(facecolor="#1F2937", edgecolor="none", labelcolor="white", fontsize=8)
+    ax.legend(facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
     if is_standalone:
         fig.tight_layout()
     return fig
 
-# ── Preview en pantalla ───────────────────────────────────────────────────────
-def mostrar_preview(df_p, pos_map):
-    pases_t    = len(df_p[df_p["Event"] == "pase"])
-    recup_t    = len(df_p[df_p["Event"] == "recuperacion"])
-    perdidas_t = len(df_p[df_p["Event"] == "perdida"])
-    remates_t  = len(df_p[df_p["Event"] == "remate"])
-    goles_t    = len(df_p[df_p["Event"] == "gol"])
-    faltas_t   = len(df_p[df_p["Event"] == "falta cometida"])
-    ratio      = round(pases_t / perdidas_t, 1) if perdidas_t > 0 else "—"
-
-    def kpi(label, value, accent=False):
-        c = "#E23E3E" if accent else "#F9FAFB"
-        return f"<div style='background:#1F2937;border-left:3px solid {'#E23E3E' if accent else '#374151'};border-radius:4px;padding:12px 16px;text-align:center'><div style='font-size:0.6em;color:#6B7280;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px'>{label}</div><div style='font-size:1.8em;font-weight:800;color:{c}'>{value}</div></div>"
-
-    c1,c2,c3,c4,c5,c6,c7 = st.columns(7)
-    c1.markdown(kpi("Pases", pases_t, True), unsafe_allow_html=True)
-    c2.markdown(kpi("Recuperaciones", recup_t), unsafe_allow_html=True)
-    c3.markdown(kpi("Pérdidas", perdidas_t), unsafe_allow_html=True)
-    c4.markdown(kpi("Ratio P/P", ratio), unsafe_allow_html=True)
-    c5.markdown(kpi("Remates", remates_t), unsafe_allow_html=True)
-    c6.markdown(kpi("Goles", goles_t, goles_t > 0), unsafe_allow_html=True)
-    c7.markdown(kpi("Faltas", faltas_t), unsafe_allow_html=True)
-
-    st.markdown("<div style='margin:20px 0'></div>", unsafe_allow_html=True)
-
-    col_izq, col_der = st.columns(2)
-    with col_izq:
-        st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin-bottom:8px'>Mapa de pases</p>", unsafe_allow_html=True)
-        fig1 = grafico_pases(df_p)
-        st.pyplot(fig1)
-    with col_der:
-        st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin-bottom:8px'>Zonas de actividad</p>", unsafe_allow_html=True)
-        fig2 = grafico_heatmap(df_p)
-        st.pyplot(fig2)
-
-    st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin:20px 0 8px 0'>Protagonistas del partido</p>", unsafe_allow_html=True)
-    fig3 = grafico_protagonistas(df_p, pos_map)
-    st.pyplot(fig3)
-
-    st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin:20px 0 8px 0'>Actividad por minuto</p>", unsafe_allow_html=True)
-    fig4 = grafico_actividad(df_p)
-    st.pyplot(fig4)
-
 # ── Generar Imagen ────────────────────────────────────────────────────────────
 def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
     buf = io.BytesIO()
-    # Formato vertical de alta resolución: 12 pulgadas de ancho, 28 de alto
-    fig = plt.figure(figsize=(12, 28), facecolor="#111827")
+    # Formato vertical de alta resolución (estilo infografía crema): 12" x 18"
+    fig = plt.figure(figsize=(12, 18), facecolor="#FAF7F2")
     
     # Calcular KPIs
     pases_t    = len(df_p[df_p["Event"] == "pase"])
@@ -330,143 +287,117 @@ def generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha):
     if not obs:       obs.append("• Sin alertas tácticas relevantes en este partido.")
 
     # 1. Encabezado
-    header_ax = fig.add_axes([0.05, 0.925, 0.90, 0.05])
-    header_ax.axis("off")
-    
-    title_x = 0.05
     if os.path.exists(ESCUDO_PATH):
         try:
             from PIL import Image as PILImage
             img = PILImage.open(ESCUDO_PATH)
-            logo_ax = fig.add_axes([0.05, 0.925, 0.06, 0.05])
+            logo_ax = fig.add_axes([0.05, 0.91, 0.05, 0.05])
             logo_ax.imshow(img)
             logo_ax.axis("off")
-            title_x = 0.13
         except Exception:
             pass
 
-    header_ax.text(title_x, 0.65, "CLUB ATLÉTICO ESTRELLA DE BERISSO", 
-                   color="#F9FAFB", fontsize=18, fontweight="bold", ha="left", va="center")
-    header_ax.text(title_x, 0.25, "Reporte Post-Partido", 
-                   color="#E23E3E", fontsize=13, fontweight="bold", ha="left", va="center")
+    header_ax = fig.add_axes([0.05, 0.90, 0.90, 0.08])
+    header_ax.axis("off")
     
-    partido_txt = f"Fecha {num_fecha}  ·  vs {rival}  ·  {condicion}"
-    if resultado: partido_txt += f"  ·  {resultado}"
-    header_ax.text(0.95, 0.45, partido_txt, 
-                   color="#9CA3AF", fontsize=11, fontweight="bold", ha="right", va="center")
+    header_ax.text(0.5, 0.70, f"Estrella de Berisso vs {rival}", 
+                   color="#8A2525", fontsize=22, fontweight="bold", ha="center", va="center", fontfamily="serif")
+    
+    partido_txt = f"Fecha {num_fecha}  ·  {condicion}"
+    if resultado: partido_txt += f"  ·  Resultado: {resultado}"
+    header_ax.text(0.5, 0.25, partido_txt, 
+                   color="#3D2C24", fontsize=11, fontweight="bold", ha="center", va="center", fontfamily="serif")
 
     # Línea divisoria roja
-    fig.add_axes([0.05, 0.915, 0.90, 0.002], facecolor="#E23E3E").axis("off")
+    fig.add_axes([0.05, 0.89, 0.90, 0.002], facecolor="#8A2525").axis("off")
 
-    # 2. KPIs
-    kpi_ax = fig.add_axes([0.05, 0.84, 0.90, 0.06])
-    kpi_ax.axis("off")
-    kpis = [
-        ("PASES", str(pases_t), True),
-        ("RECUPERACIONES", str(recup_t), False),
-        ("PÉRDIDAS", str(perdidas_t), False),
-        ("RATIO P/P", str(ratio), False),
-        ("REMATES", str(remates_t), False),
-        ("GOLES", str(goles_t), goles_t > 0),
-        ("FALTAS", str(faltas_t), False)
-    ]
-    import matplotlib.patches as patches
-    for idx, (label, val, accent) in enumerate(kpis):
-        x_start = idx / 7.0 + 0.005
-        x_width = 1.0 / 7.0 - 0.01
-        
-        rect = patches.FancyBboxPatch(
-            (x_start, 0.05), x_width, 0.9,
-            boxstyle="round,pad=0.01",
-            facecolor="#1F2937", edgecolor="#374151", linewidth=1
-        )
-        kpi_ax.add_patch(rect)
-        
-        kpi_ax.text(
-            x_start + x_width/2, 0.65, label,
-            color="#9CA3AF", fontsize=8, ha="center", va="center", fontweight="bold"
-        )
-        val_color = "#E23E3E" if accent else "#F9FAFB"
-        kpi_ax.text(
-            x_start + x_width/2, 0.3, val,
-            color=val_color, fontsize=16, ha="center", va="center", fontweight="bold"
-        )
+    # Títulos de la Fila 1
+    fig.text(0.05, 0.865, "Mapa de Pases", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.415, 0.865, "Métricas", color="#3D2C24", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.62, 0.865, "Zonas de Actividad", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
-    # Título Sección 1
-    fig.text(0.05, 0.815, "Análisis de pases y zonas", color="#E23E3E", fontsize=13, fontweight="bold")
-
-    # 3. Gráficos de pases y heatmap
-    ax_pases = fig.add_axes([0.05, 0.52, 0.43, 0.28])
-    ax_heatmap = fig.add_axes([0.52, 0.52, 0.43, 0.28])
+    # 2. Fila 1 Subplots: Mapa Pases, Tabla KPIs, Heatmap
+    ax_pases = fig.add_axes([0.05, 0.48, 0.33, 0.37])
+    ax_table = fig.add_axes([0.415, 0.48, 0.17, 0.37])
+    ax_heatmap = fig.add_axes([0.62, 0.48, 0.33, 0.37])
+    
     grafico_pases(df_p, ax=ax_pases)
     grafico_heatmap(df_p, ax=ax_heatmap)
 
-    # Título Sección 2
-    fig.text(0.05, 0.495, "Protagonistas del partido", color="#E23E3E", fontsize=13, fontweight="bold")
+    # Dibujar tabla vertical de Estadísticas
+    ax_table.axis("off")
+    ax_table.text(0.05, 0.92, "Métrica", color="#3D2C24", fontsize=11, fontweight="bold", ha="left", fontfamily="monospace")
+    ax_table.text(0.95, 0.92, "Valor", color="#3D2C24", fontsize=11, fontweight="bold", ha="right", fontfamily="monospace")
+    ax_table.plot([0.01, 0.99], [0.85, 0.85], color="#7A6A5E", linewidth=1.5)
+    
+    kpis_table_data = [
+        ("Pases", str(pases_t), True),
+        ("Recuperaciones", str(recup_t), False),
+        ("Pérdidas", str(perdidas_t), False),
+        ("Ratio P/P", str(ratio), False),
+        ("Remates", str(remates_t), False),
+        ("Goles", str(goles_t), goles_t > 0),
+        ("Faltas", str(faltas_t), False)
+    ]
+    y_val = 0.73
+    for label, val, accent in kpis_table_data:
+        ax_table.text(0.05, y_val, label, color="#3D2C24", fontsize=10, ha="left", fontfamily="monospace")
+        val_color = "#A83232" if accent else "#3D2C24"
+        ax_table.text(0.95, y_val, val, color=val_color, fontsize=10, fontweight="bold", ha="right", fontfamily="monospace")
+        ax_table.plot([0.01, 0.99], [y_val - 0.05, y_val - 0.05], color="#7A6A5E", linewidth=0.5, linestyle=":")
+        y_val -= 0.10
 
-    # 4. Protagonistas
-    ax_prot1 = fig.add_axes([0.05, 0.36, 0.27, 0.12])
-    ax_prot2 = fig.add_axes([0.365, 0.36, 0.27, 0.12])
-    ax_prot3 = fig.add_axes([0.68, 0.36, 0.27, 0.12])
-    grafico_protagonistas(df_p, pos_map, axes=[ax_prot1, ax_prot2, ax_prot3])
+    # Títulos de la Fila 2
+    fig.text(0.05, 0.435, "Actividad por Minuto", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.52, 0.435, "Protagonistas del Partido", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
-    # Título Sección 3
-    fig.text(0.05, 0.325, "Actividad por minuto", color="#E23E3E", fontsize=13, fontweight="bold")
+    # 3. Fila 2 Subplots: Actividad y Protagonistas
+    ax_act = fig.add_axes([0.05, 0.20, 0.43, 0.22])
+    ax_p1 = fig.add_axes([0.52, 0.20, 0.13, 0.22])
+    ax_p2 = fig.add_axes([0.67, 0.20, 0.13, 0.22])
+    ax_p3 = fig.add_axes([0.82, 0.20, 0.13, 0.22])
+    
+    grafico_actividad(df_p, ax=ax_act)
+    grafico_protagonistas(df_p, pos_map, axes=[ax_p1, ax_p2, ax_p3])
 
-    # 5. Actividad por minuto
-    ax_actividad = fig.add_axes([0.05, 0.21, 0.90, 0.10])
-    grafico_actividad(df_p, ax=ax_actividad)
+    # Título de la Fila 3
+    fig.text(0.05, 0.165, "Observaciones del Analista", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
-    # Título Sección 4
-    fig.text(0.05, 0.185, "Observaciones del analista", color="#E23E3E", fontsize=13, fontweight="bold")
-
-    # 6. Observaciones
-    obs_ax = fig.add_axes([0.05, 0.05, 0.90, 0.125])
+    # 4. Fila 3: Observaciones
+    obs_ax = fig.add_axes([0.05, 0.06, 0.90, 0.09])
     obs_ax.axis("off")
+    import matplotlib.patches as patches
     rect_obs = patches.FancyBboxPatch(
         (0.0, 0.05), 1.0, 0.9,
         boxstyle="round,pad=0.01",
-        facecolor="#1F2937", edgecolor="#374151", linewidth=1
+        facecolor="#F2EEE7", edgecolor="#7A6A5E", linewidth=1
     )
     obs_ax.add_patch(rect_obs)
     
-    y_pos = 0.80
+    y_pos = 0.75
     for o in obs:
         obs_ax.text(
             0.03, y_pos, o,
-            color="#F9FAFB", fontsize=11, ha="left", va="center"
+            color="#3D2C24", fontsize=10.5, ha="left", va="center", fontfamily="serif"
         )
-        y_pos -= 0.18
+        y_pos -= 0.22
 
     # Línea divisoria inferior
-    fig.add_axes([0.05, 0.04, 0.90, 0.001], facecolor="#374151").axis("off")
+    fig.add_axes([0.05, 0.045, 0.90, 0.001], facecolor="#7A6A5E").axis("off")
 
-    # 7. Firma / Pie de página
-    fig.text(0.5, 0.024, "IAO Footbal Analytics", color="#E23E3E", fontsize=13, ha="center", va="center", fontweight="bold")
-    fig.text(0.5, 0.012, "Transformo datos en decisiones.", color="#9CA3AF", fontsize=9, ha="center", va="center", style="italic")
+    # 5. Firma / Pie de página
+    fig.text(0.05, 0.024, "IAO Footbal Analytics", color="#8A2525", fontsize=12, ha="left", va="center", fontweight="bold", fontfamily="serif")
+    fig.text(0.05, 0.012, "video-analisis-app.streamlit.app", color="#7A6A5E", fontsize=9, ha="left", va="center", fontfamily="serif")
+    
+    fig.text(0.5, 0.018, "IAO", color="#8A2525", fontsize=24, ha="center", va="center", fontfamily="serif", fontstyle="italic", fontweight="bold")
+    
+    fig.text(0.95, 0.018, "Análisis de Video y Datos", color="#3D2C24", fontsize=10, ha="right", va="center", fontfamily="serif")
 
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
     buf.seek(0)
     plt.close(fig)
     return buf
 
-# ── UI principal ──────────────────────────────────────────────────────────────
-col_prev, col_gen = st.columns([1, 1])
-
-with col_prev:
-    if st.button("👁 Ver preview", use_container_width=True):
-        st.session_state["mostrar_preview"] = True
-
-with col_gen:
-    if st.button("🖼 Generar Imagen", type="primary", use_container_width=True):
-        with st.spinner("Generando imagen..."):
-            img_buf = generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha)
-        nombre = f"reporte_estrella_f{num_fecha}_vs_{rival.replace(' ','_').lower()}.png"
-        st.download_button("⬇ Descargar Imagen", data=img_buf,
-                           file_name=nombre, mime="image/png")
-        st.success(f"Listo — {nombre}")
-
-if st.session_state.get("mostrar_preview"):
-    st.markdown("<div style='margin:20px 0;height:1px;background:#1F2937'></div>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size:0.65em;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:3px;margin-bottom:16px'>Preview del reporte</p>", unsafe_allow_html=True)
-    mostrar_preview(df_p, pos_map)
+# Generar y mostrar la imagen del reporte directamente
+img_buf = generar_imagen(df_p, rival, condicion, resultado, pos_map, num_fecha)
+st.image(img_buf, use_container_width=True)
