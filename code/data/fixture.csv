@@ -1,7 +1,7 @@
 fecha,condicion,rival,goles_favor,goles_contra,estado
 1,Local,Deportivo Metalúrgico,0,1,Jugado
 2,Local,Atlético Pilar,1,0,Jugado
-3,Visitante,CUDP,0,1,Jugado
+3,Visitante,CUDP,1,0,Jugado
 4,Local,Defensores de Glew,,,Pendiente
 5,Visitante,Hacoaj,,,Pendiente
 6,Local,Juventud de Bernal,,,Pendiente
