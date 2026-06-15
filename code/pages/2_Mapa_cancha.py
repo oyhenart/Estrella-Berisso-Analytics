@@ -214,13 +214,11 @@ if not df_filtrado.empty:
             subset_flechas = subset[subset["X2"].notna() & subset["Y2"].notna()].copy()
 
             if usar_promedio:
-                # Bins 20x20 → cancha dividida en 25 zonas
                 subset_flechas["X_bin"]  = (subset_flechas["X"]  // 20 * 20 + 10).astype(int)
                 subset_flechas["Y_bin"]  = (subset_flechas["Y"]  // 20 * 20 + 10).astype(int)
                 subset_flechas["X2_bin"] = (subset_flechas["X2"] // 20 * 20 + 10).astype(int)
                 subset_flechas["Y2_bin"] = (subset_flechas["Y2"] // 20 * 20 + 10).astype(int)
 
-                # Ignorar pases que quedan en la misma zona
                 subset_flechas = subset_flechas[
                     (subset_flechas["X_bin"] != subset_flechas["X2_bin"]) |
                     (subset_flechas["Y_bin"]  != subset_flechas["Y2_bin"])
@@ -232,11 +230,18 @@ if not df_filtrado.empty:
                 for df_pases, color in [(pases_ok, "#22C55E"), (pases_bad, "#EF4444")]:
                     if df_pases.empty:
                         continue
+                    # Promedio REAL de coordenadas, agrupado por bin
                     agrupado = (
                         df_pases
                         .groupby(["X_bin", "Y_bin", "X2_bin", "Y2_bin"])
-                        .size()
-                        .reset_index(name="cantidad")
+                        .agg(
+                            cantidad=("X", "count"),
+                            x_origen=("X", "mean"),
+                            y_origen=("Y", "mean"),
+                            x_destino=("X2", "mean"),
+                            y_destino=("Y2", "mean"),
+                        )
+                        .reset_index()
                     )
                     umbral = max(2, agrupado["cantidad"].max() * 0.05)
                     agrupado = agrupado[agrupado["cantidad"] >= umbral]
@@ -247,11 +252,10 @@ if not df_filtrado.empty:
                         grosor = 1 + (fila["cantidad"] / max_cant) * 7
                         alpha  = 0.4 + (fila["cantidad"] / max_cant) * 0.55
                         pitch.arrows(
-                            fila["X_bin"], fila["Y_bin"],
-                            fila["X2_bin"], fila["Y2_bin"],
+                            fila["x_origen"], fila["y_origen"],
+                            fila["x_destino"], fila["y_destino"],
                             ax=ax, color=color, width=grosor, alpha=alpha
                         )
-
             else:
                 # Partido + jugador específico → flechas individuales
                 pases_ok  = subset_flechas[subset_flechas["pase_ok"]]
