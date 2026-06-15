@@ -64,14 +64,15 @@ def clasificar_pases(df):
     df = df.copy()
     df["pase_ok"] = False
 
-    s_continuidad = {
+    eventos_continuidad = {
         "pase", "centro", "conduccion", "corner", 
         "remate", "tiro libre", "falta recibida"
     }
-    s_corte = {"perdida", "despeje", "recuperacion"}
+    eventos_corte = {"perdida", "despeje", "recuperacion"}
     tolerancia = 8
 
-    # Usamos un rango basado en la posición física (indexación limpia)
+    df = df.reset_index(drop=True)
+
     for i in range(len(df)):
         fila = df.iloc[i]
 
@@ -99,15 +100,15 @@ def clasificar_pases(df):
             if distancia > tolerancia:
                 continue
 
-            _sig = str(siguiente["Event"]).lower()
+            evento_sig = str(siguiente["Event"]).lower()
 
             if evento_sig in eventos_continuidad:
-                df.iat[i, df.columns.get_loc("pase_ok")] = True
+                df.at[i, "pase_ok"] = True
                 break
 
             if evento_sig in eventos_corte:
                 break
-                
+
     return df
 
 # ── Encabezado ────────────────────────────────────────────────────
