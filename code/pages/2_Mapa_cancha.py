@@ -200,6 +200,9 @@ if not df_filtrado.empty:
         "falta cometida": "#FCA5A5"
     }
 
+    # Usar promedio en todos los casos EXCEPTO partido específico + jugador específico
+    usar_promedio = not (fecha_sel != "Todos los partidos" and jugador_sel != "Todos")
+
     eventos_presentes = df_filtrado["Event"].dropna().unique()
 
     for evento in eventos_presentes:
@@ -210,57 +213,70 @@ if not df_filtrado.empty:
         if evento.lower() == "pase":
             subset_flechas = subset[subset["X2"].notna() & subset["Y2"].notna()].copy()
 
-            # Agrupar por zona de origen y destino (bins de 10x10 sobre cancha 100x100)
-            subset_flechas["X_bin"]  = (subset_flechas["X"]  // 10 * 10 + 5).astype(int)
-            subset_flechas["Y_bin"]  = (subset_flechas["Y"]  // 10 * 10 + 5).astype(int)
-            subset_flechas["X2_bin"] = (subset_flechas["X2"] // 10 * 10 + 5).astype(int)
-            subset_flechas["Y2_bin"] = (subset_flechas["Y2"] // 10 * 10 + 5).astype(int)
+            if usar_promedio:
+                # Bins 20x20 → cancha dividida en 25 zonas
+                subset_flechas["X_bin"]  = (subset_flechas["X"]  // 20 * 20 + 10).astype(int)
+                subset_flechas["Y_bin"]  = (subset_flechas["Y"]  // 20 * 20 + 10).astype(int)
+                subset_flechas["X2_bin"] = (subset_flechas["X2"] // 20 * 20 + 10).astype(int)
+                subset_flechas["Y2_bin"] = (subset_flechas["Y2"] // 20 * 20 + 10).astype(int)
 
-            # Agrupar pases exitosos
-            pases_ok  = subset_flechas[subset_flechas["pase_ok"]]
-            pases_bad = subset_flechas[~subset_flechas["pase_ok"]]
+                # Ignorar pases que quedan en la misma zona
+                subset_flechas = subset_flechas[
+                    (subset_flechas["X_bin"] != subset_flechas["X2_bin"]) |
+                    (subset_flechas["Y_bin"]  != subset_flechas["Y2_bin"])
+                ]
 
-            if not pases_ok.empty:
-                agrupado_ok = (
-                    pases_ok
-                    .groupby(["X_bin", "Y_bin", "X2_bin", "Y2_bin"])
-                    .size()
-                    .reset_index(name="cantidad")
-                )
-                max_cant = agrupado_ok["cantidad"].max()
-                for _, fila in agrupado_ok.iterrows():
-                    grosor = 1 + (fila["cantidad"] / max_cant) * 6
-                    alpha  = 0.4 + (fila["cantidad"] / max_cant) * 0.5
+                pases_ok  = subset_flechas[subset_flechas["pase_ok"]]
+                pases_bad = subset_flechas[~subset_flechas["pase_ok"]]
+
+                for df_pases, color in [(pases_ok, "#22C55E"), (pases_bad, "#EF4444")]:
+                    if df_pases.empty:
+                        continue
+                    agrupado = (
+                        df_pases
+                        .groupby(["X_bin", "Y_bin", "X2_bin", "Y2_bin"])
+                        .size()
+                        .reset_index(name="cantidad")
+                    )
+                    umbral = max(2, agrupado["cantidad"].max() * 0.05)
+                    agrupado = agrupado[agrupado["cantidad"] >= umbral]
+                    if agrupado.empty:
+                        continue
+                    max_cant = agrupado["cantidad"].max()
+                    for _, fila in agrupado.iterrows():
+                        grosor = 1 + (fila["cantidad"] / max_cant) * 7
+                        alpha  = 0.4 + (fila["cantidad"] / max_cant) * 0.55
+                        pitch.arrows(
+                            fila["X_bin"], fila["Y_bin"],
+                            fila["X2_bin"], fila["Y2_bin"],
+                            ax=ax, color=color, width=grosor, alpha=alpha
+                        )
+
+            else:
+                # Partido + jugador específico → flechas individuales
+                pases_ok  = subset_flechas[subset_flechas["pase_ok"]]
+                pases_bad = subset_flechas[~subset_flechas["pase_ok"]]
+                if not pases_ok.empty:
                     pitch.arrows(
-                        fila["X_bin"], fila["Y_bin"],
-                        fila["X2_bin"], fila["Y2_bin"],
-                        ax=ax, color="#22C55E",
-                        width=grosor, alpha=alpha
-                )
-
-            if not pases_bad.empty:
-                agrupado_bad = (
-                    pases_bad
-                    .groupby(["X_bin", "Y_bin", "X2_bin", "Y2_bin"])
-                    .size()
-                    .reset_index(name="cantidad")
-            )
-            max_cant = agrupado_bad["cantidad"].max()
-            for _, fila in agrupado_bad.iterrows():
-                grosor = 1 + (fila["cantidad"] / max_cant) * 6
-                alpha  = 0.4 + (fila["cantidad"] / max_cant) * 0.5
-                pitch.arrows(
-                    fila["X_bin"], fila["Y_bin"],
-                    fila["X2_bin"], fila["Y2_bin"],
-                    ax=ax, color="#EF4444",
-                    width=grosor, alpha=alpha
-                )
+                        pases_ok["X"], pases_ok["Y"],
+                        pases_ok["X2"], pases_ok["Y2"],
+                        ax=ax, color="#22C55E", width=2, alpha=0.85
+                    )
+                if not pases_bad.empty:
+                    pitch.arrows(
+                        pases_bad["X"], pases_bad["Y"],
+                        pases_bad["X2"], pases_bad["Y2"],
+                        ax=ax, color="#EF4444", width=2, alpha=0.85
+                    )
             continue
 
         if evento.lower() == "centro":
             subset_flechas = subset[subset["X2"].notna() & subset["Y2"].notna()]
-            pitch.arrows(subset_flechas["X"], subset_flechas["Y"], subset_flechas["X2"], subset_flechas["Y2"],
-                         ax=ax, color="#67E8F9", width=2, alpha=0.9)
+            pitch.arrows(
+                subset_flechas["X"], subset_flechas["Y"],
+                subset_flechas["X2"], subset_flechas["Y2"],
+                ax=ax, color="#67E8F9", width=2, alpha=0.9
+            )
             continue
 
         pitch.scatter(subset["X"], subset["Y"], ax=ax, s=80,
@@ -295,7 +311,6 @@ else:
 # =============================================================================
 def detectar_conexiones_optimizada(df_partido):
     conexiones = []
-    # Buscamos de forma posicional indexando sobre las filas reales secuenciales
     df_partido = df_partido.reset_index(drop=True)
     
     pases_idx = df_partido[(df_partido["Event"] == "pase") & (df_partido["pase_ok"] == True)].index
@@ -331,7 +346,6 @@ st.divider()
 st.subheader("🕸️ Red de pases")
 
 def obtener_eventos_antes_del_primer_cambio(df_partido):
-    # Ordenar cronológicamente de forma estricta
     df_partido = df_partido.sort_values(by=["mitad", "Mins", "Secs"]).reset_index(drop=True)
     
     jugadores_unicos = []
@@ -344,7 +358,6 @@ def obtener_eventos_antes_del_primer_cambio(df_partido):
         
         if jugador not in jugadores_unicos:
             if len(jugadores_unicos) == 11:
-                # El jugador número 12 es el que entra (primer cambio)
                 indice_cambio = idx
                 break
             jugadores_unicos.append(jugador)
@@ -364,7 +377,6 @@ def obtener_eventos_antes_del_primer_cambio(df_partido):
     return df_recortado, jugadores_unicos, info_cambio
 
 if not df_base.empty:
-    # Si se seleccionó un partido específico, mostramos solo los titulares hasta el primer cambio
     if fecha_sel != "Todos los partidos":
         df_red, titulares, info_cambio = obtener_eventos_antes_del_primer_cambio(df_base)
         if info_cambio:
@@ -382,31 +394,27 @@ if not df_base.empty:
     else:
         pitch, fig, ax = crear_cancha()
 
-        # Posición promedio basada estrictamente en los pases hechos para mayor precisión táctica
         pases_validos = df_red[df_red["Event"] == "pase"]
         posiciones = pases_validos.groupby("Player").agg({"X": "mean", "Y": "mean"}).reset_index()
 
         conexiones_count = conexiones.groupby(["origen", "destino"]).size().reset_index(name="cantidad")
 
-        # Dibujar líneas
         for _, fila in conexiones_count.iterrows():
             origen, destino, cantidad = fila["origen"], fila["destino"], fila["cantidad"]
 
-            pos_origen = posiciones[posiciones["Player"] == origen]
+            pos_origen  = posiciones[posiciones["Player"] == origen]
             pos_destino = posiciones[posiciones["Player"] == destino]
 
             if pos_origen.empty or pos_destino.empty:
                 continue
 
-            x1, y1 = pos_origen["X"].iloc[0], pos_origen["Y"].iloc[0]
+            x1, y1 = pos_origen["X"].iloc[0],  pos_origen["Y"].iloc[0]
             x2, y2 = pos_destino["X"].iloc[0], pos_destino["Y"].iloc[0]
 
             pitch.lines(x1, y1, x2, y2, ax=ax, lw=max(1, cantidad * 1.5), color="#4ADE80", alpha=0.75, zorder=2)
 
-        # Dibujar nodos
         pitch.scatter(posiciones["X"], posiciones["Y"], ax=ax, s=600, color="#2563EB", edgecolors="white", linewidth=2, zorder=3)
 
-        # Etiquetas de texto
         for _, fila in posiciones.iterrows():
             ax.text(fila["X"], fila["Y"], fila["Player"], color="white", fontsize=8,
                     ha="center", va="center", weight="bold", zorder=4)
