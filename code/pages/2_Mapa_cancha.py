@@ -64,11 +64,11 @@ def clasificar_pases(df):
     df = df.copy()
     df["pase_ok"] = False
 
-    eventos_continuidad = {
+    s_continuidad = {
         "pase", "centro", "conduccion", "corner", 
         "remate", "tiro libre", "falta recibida"
     }
-    eventos_corte = {"perdida", "despeje", "recuperacion"}
+    s_corte = {"perdida", "despeje", "recuperacion"}
     tolerancia = 8
 
     # Usamos un rango basado en la posición física (indexación limpia)
@@ -99,7 +99,7 @@ def clasificar_pases(df):
             if distancia > tolerancia:
                 continue
 
-            evento_sig = str(siguiente["Event"]).lower()
+            _sig = str(siguiente["Event"]).lower()
 
             if evento_sig in eventos_continuidad:
                 df.iat[i, df.columns.get_loc("pase_ok")] = True
@@ -207,16 +207,53 @@ if not df_filtrado.empty:
             continue
 
         if evento.lower() == "pase":
-            subset_flechas = subset[subset["X2"].notna() & subset["Y2"].notna()]
-            pases_ok = subset_flechas[subset_flechas["pase_ok"]]
+            subset_flechas = subset[subset["X2"].notna() & subset["Y2"].notna()].copy()
+
+            # Agrupar por zona de origen y destino (bins de 10x10 sobre cancha 100x100)
+            subset_flechas["X_bin"]  = (subset_flechas["X"]  // 10 * 10 + 5).astype(int)
+            subset_flechas["Y_bin"]  = (subset_flechas["Y"]  // 10 * 10 + 5).astype(int)
+            subset_flechas["X2_bin"] = (subset_flechas["X2"] // 10 * 10 + 5).astype(int)
+            subset_flechas["Y2_bin"] = (subset_flechas["Y2"] // 10 * 10 + 5).astype(int)
+
+            # Agrupar pases exitosos
+            pases_ok  = subset_flechas[subset_flechas["pase_ok"]]
             pases_bad = subset_flechas[~subset_flechas["pase_ok"]]
 
             if not pases_ok.empty:
-                pitch.arrows(pases_ok["X"], pases_ok["Y"], pases_ok["X2"], pases_ok["Y2"],
-                             ax=ax, color="#22C55E", width=2, alpha=0.85)
+                agrupado_ok = (
+                    pases_ok
+                    .groupby(["X_bin", "Y_bin", "X2_bin", "Y2_bin"])
+                    .size()
+                    .reset_index(name="cantidad")
+                )
+                max_cant = agrupado_ok["cantidad"].max()
+                for _, fila in agrupado_ok.iterrows():
+                    grosor = 1 + (fila["cantidad"] / max_cant) * 6
+                    alpha  = 0.4 + (fila["cantidad"] / max_cant) * 0.5
+                    pitch.arrows(
+                        fila["X_bin"], fila["Y_bin"],
+                        fila["X2_bin"], fila["Y2_bin"],
+                        ax=ax, color="#22C55E",
+                        width=grosor, alpha=alpha
+                )
+
             if not pases_bad.empty:
-                pitch.arrows(pases_bad["X"], pases_bad["Y"], pases_bad["X2"], pases_bad["Y2"],
-                             ax=ax, color="#EF4444", width=2, alpha=0.85)
+                agrupado_bad = (
+                    pases_bad
+                    .groupby(["X_bin", "Y_bin", "X2_bin", "Y2_bin"])
+                    .size()
+                    .reset_index(name="cantidad")
+            )
+            max_cant = agrupado_bad["cantidad"].max()
+            for _, fila in agrupado_bad.iterrows():
+                grosor = 1 + (fila["cantidad"] / max_cant) * 6
+                alpha  = 0.4 + (fila["cantidad"] / max_cant) * 0.5
+                pitch.arrows(
+                    fila["X_bin"], fila["Y_bin"],
+                    fila["X2_bin"], fila["Y2_bin"],
+                    ax=ax, color="#EF4444",
+                    width=grosor, alpha=alpha
+                )
             continue
 
         if evento.lower() == "centro":
