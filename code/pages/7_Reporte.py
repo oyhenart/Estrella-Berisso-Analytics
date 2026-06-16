@@ -208,6 +208,7 @@ def grafico_pases_largos(df_p, ax):
     pases = df_p[df_p["Event"] == "pase"].copy()
     for col in ["X","Y","X2","Y2"]:
         pases[col] = pd.to_numeric(pases[col], errors="coerce")
+    completos = 0; incompletos = 0
     for idx, row in pases.iterrows():
         x1, y1 = float(row["X"]), float(row["Y"])
         x2, y2 = row["X2"], row["Y2"]
@@ -218,11 +219,20 @@ def grafico_pases_largos(df_p, ax):
             sig_event = ""
             if idx + 1 < len(df_p):
                 sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
-            complete = sig_event not in ["perdida",""]
-            color = "#1D4ED8" if complete else "#9CA3AF"
+            complete = sig_event not in ["perdida", ""]
+            color = "#2E6F40" if complete else "#C93B3B"
+            alpha = 0.8 if complete else 0.5
+            if complete: completos += 1
+            else: incompletos += 1
             ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
-                arrowprops=dict(arrowstyle="-|>", color=color, lw=1.5, alpha=0.8))
-            ax.plot(x1, y1, "o", color=color, markersize=4)
+                arrowprops=dict(arrowstyle="-|>", color=color, lw=1.5, alpha=alpha))
+            ax.plot(x1, y1, "o", color=color, markersize=4, alpha=alpha)
+    legend = [
+        mpatches.Patch(color="#2E6F40", label=f"Completo ({completos})"),
+        mpatches.Patch(color="#C93B3B", label=f"Incompleto ({incompletos})"),
+    ]
+    ax.legend(handles=legend, loc="upper left", framealpha=0.9,
+              facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
 
 # ── Gráfico 5: Mapa de Remates ────────────────────────────────────────────────
 def grafico_remates(df_p, ax):
@@ -230,15 +240,26 @@ def grafico_remates(df_p, ax):
     remates = df_p[df_p["Event"].isin(["remate", "gol"])].copy()
     for col in ["X","Y"]:
         remates[col] = pd.to_numeric(remates[col], errors="coerce")
+    goles = 0; no_goles = 0
     for _, row in remates.iterrows():
         orig_x, orig_y = float(row["X"]), float(row["Y"])
         if pd.isna(orig_x) or pd.isna(orig_y): continue
         x, y = orig_y, orig_x
         es_gol = (row["Event"] == "gol")
-        color = "#C93B3B" if es_gol else "#4B5563"
+        color = "#2E6F40" if es_gol else "#C93B3B"
         marker = "o" if es_gol else "x"
         size = 120 if es_gol else 60
-        ax.scatter(x, y, color=color, marker=marker, s=size, zorder=5, alpha=0.9, edgecolors="#FAF7F2")
+        alpha = 0.9 if es_gol else 0.6
+        if es_gol: goles += 1
+        else: no_goles += 1
+        ax.scatter(x, y, color=color, marker=marker, s=size, zorder=5,
+                   alpha=alpha, edgecolors="#FAF7F2")
+    legend = [
+        mpatches.Patch(color="#2E6F40", label=f"Gol ({goles})"),
+        mpatches.Patch(color="#C93B3B", label=f"No convirtió ({no_goles})"),
+    ]
+    ax.legend(handles=legend, loc="upper left", framealpha=0.9,
+              facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
 
 # ── Generar Imagen General ────────────────────────────────────────────────────
 def generar_imagen(df_p, rival, condicion, resultado, num_fecha, fixture_row):
