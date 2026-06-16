@@ -55,20 +55,22 @@ def render_sidebar(base_path):
 </div>
 """, unsafe_allow_html=True)
 
-    # Nombres exactos según el repo
+    # page_link acepta rutas absolutas al archivo .py
+    # base_path = .../code/  →  pages están en .../code/pages/
     paginas = [
-        ("app.py",                   "⚽ Inicio"),
-        ("pages/1_Plantel_ficha.py", "👥 Plantel"),
-        ("pages/2_Mapa_cancha.py",   "🗺️ Campo"),
-        ("pages/3_Plantilla.py",     "📋 Plantilla"),
-        ("pages/4_Fixture.py",       "🗓️ Fixture"),
-        ("pages/5_Alertas.py",       "🚨 Alertas"),
-        ("pages/6_Videos.py",        "🎬 Videos"),
-        ("pages/7_Reporte.py",       "📄 Reporte"),
+        (os.path.join(base_path, "app.py"),                   "⚽ Inicio"),
+        (os.path.join(base_path, "pages", "1_Plantel_ficha.py"), "👥 Plantel"),
+        (os.path.join(base_path, "pages", "2_Mapa_cancha.py"),   "🗺️ Campo"),
+        (os.path.join(base_path, "pages", "3_Plantilla.py"),     "📋 Plantilla"),
+        (os.path.join(base_path, "pages", "4_Fixture.py"),       "🗓️ Fixture"),
+        (os.path.join(base_path, "pages", "5_Alertas.py"),       "🚨 Alertas"),
+        (os.path.join(base_path, "pages", "6_Videos.py"),        "🎬 Videos"),
+        (os.path.join(base_path, "pages", "7_Reporte.py"),       "📄 Reporte"),
     ]
 
-    for ruta, nombre in paginas:
-        st.sidebar.page_link(ruta, label=nombre)
+    for ruta_abs, nombre in paginas:
+        if os.path.exists(ruta_abs):
+            st.sidebar.page_link(ruta_abs, label=nombre)
 
 # ==========================
 # HEADER
