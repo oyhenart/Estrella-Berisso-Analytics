@@ -29,7 +29,7 @@ st.set_page_config(
 )
 
 # ── Rutas base ────────────────────────────────────────────────────────────────
-BASE       = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FOTOS_DIR  = os.path.join(BASE, "static", "fotos")
 DATA_PATH  = os.path.join(BASE, "data", "events_clean.csv")
 FIXT_PATH  = os.path.join(BASE, "data", "fixture.csv")
