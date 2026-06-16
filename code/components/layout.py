@@ -10,9 +10,7 @@ import os
 
 def inject_css():
 
-    st.markdown(
-        """
-
+    st.markdown("""
 <style>
 
 #MainMenu{
@@ -27,50 +25,25 @@ visibility:hidden;
 display:none;
 }
 
-
-/* =======================
-FONDO
-======================= */
-
 .stApp{
-
 background:
-
 linear-gradient(
 180deg,
 #0B1120,
 #111827
 );
-
 }
-
-
-/* =======================
-CONTENIDO
-======================= */
 
 .block-container{
-
 padding-top:2rem;
-
 padding-left:2rem;
-
 padding-right:2rem;
-
 max-width:1500px;
-
 }
-
-
-
-/* =======================
-SIDEBAR
-======================= */
 
 section[data-testid="stSidebar"]{
 
 background:
-
 linear-gradient(
 180deg,
 #0B1120,
@@ -78,77 +51,19 @@ linear-gradient(
 );
 
 border-right:
-
-1px solid
-rgba(
-255,
-255,
-255,
-.04
-);
-
-padding-top:14px;
+1px solid rgba(255,255,255,.05);
 
 }
-
-
-
-section[data-testid="stSidebar"] *{
-
-color:#E5E7EB;
-
-}
-
-
-
-/* =======================
-BOTONES MENU
-======================= */
-
-[data-testid="stSidebar"] a{
-
-border-radius:10px;
-
-padding:.35rem .7rem;
-
-transition:.2s;
-
-}
-
-
-
-[data-testid="stSidebar"] a:hover{
-
-background:
-
-rgba(
-255,
-255,
-255,
-.04
-);
-
-}
-
-
-
-/* =======================
-TABS
-======================= */
 
 button[role="tab"]{
 
 background:#111827;
 
-border-radius:10px;
-
 border:none;
 
-padding:10px;
+border-radius:10px;
 
 }
-
-
 
 button[aria-selected="true"]{
 
@@ -156,16 +71,8 @@ background:#E23E3E;
 
 }
 
-
-
-/* =======================
-SCROLL
-======================= */
-
 ::-webkit-scrollbar{
-
-width:10px;
-
+width:8px;
 }
 
 ::-webkit-scrollbar-thumb{
@@ -176,30 +83,18 @@ border-radius:999px;
 
 }
 
-
-
-/* =======================
-TIPOGRAFÍA
-======================= */
-
 html,
-body,
-[class*="css"]{
+body{
 
 font-family:
-
 Inter,
 sans-serif;
 
 }
 
-
-
 </style>
-
 """,
-unsafe_allow_html=True
-)
+unsafe_allow_html=True)
 # ==========================
 # L3) SIDEBAR
 # ==========================
