@@ -55,24 +55,19 @@ def render_sidebar(base_path):
 </div>
 """, unsafe_allow_html=True)
 
-    # ── Páginas activas ──────────────────────────────────────────────────────
-    # IMPORTANTE: solo listar archivos que existen en pages/.
-    # Si una página no existe, Streamlit lanza StreamlitPageNotFoundError.
+    # Rutas relativas a la raíz del proyecto — funcionan desde cualquier página
     paginas = [
-        ("app.py",                      "⚽ Inicio"),
-        ("pages/1_Plantel_ficha.py",    "👥 Plantel"),
-        ("pages/2_Mapa_cancha.py",      "🗺️ Campo"),
-        ("pages/3_Fixture.py",          "🗓️ Fixture"),
-        ("pages/4_Alertas.py",          "🚨 Alertas"),
-        ("pages/5_Videos.py",           "🎬 Videos"),
-        ("pages/6_Reporte.py",          "📄 Reporte"),
+        ("app.py",                   "⚽ Inicio"),
+        ("pages/1_Plantel_ficha.py", "👥 Plantel"),
+        ("pages/2_Mapa_cancha.py",   "🗺️ Campo"),
+        ("pages/3_Fixture.py",       "🗓️ Fixture"),
+        ("pages/4_Alertas.py",       "🚨 Alertas"),
+        ("pages/5_Videos.py",        "🎬 Videos"),
+        ("pages/6_Reporte.py",       "📄 Reporte"),
     ]
 
     for ruta, nombre in paginas:
-        ruta_abs = os.path.join(base_path, ruta)
-        # Solo renderizar el link si el archivo realmente existe
-        if os.path.exists(ruta_abs):
-            st.sidebar.page_link(ruta, label=nombre)
+        st.sidebar.page_link(ruta, label=nombre)
 
 # ==========================
 # HEADER
