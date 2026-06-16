@@ -28,6 +28,11 @@ st.set_page_config(
     layout="wide",
 )
 
+from components.layout import inject_css, render_sidebar
+inject_css()
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+render_sidebar(BASE)
+
 # ── Rutas base ────────────────────────────────────────────────────────────────
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FOTOS_DIR  = os.path.join(BASE, "static", "fotos")
