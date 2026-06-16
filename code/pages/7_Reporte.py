@@ -53,7 +53,7 @@ jugadores_df = cargar_jugadores()
 pos_map    = dict(zip(jugadores_df["nombre"], jugadores_df["posicion"]))
 
 # ── Selector de partido ───────────────────────────────────────────────────────
-fechas    = sorted(df["fecha"].unique().tolist())
+fechas = sorted(df["fecha"].unique().tolist(), reverse=True)
 fecha_sel = st.selectbox("Seleccioná el partido", [f"Fecha {f}" for f in fechas])
 num_fecha = int(fecha_sel.replace("Fecha ", ""))
 
