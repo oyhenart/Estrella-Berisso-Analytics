@@ -55,15 +55,16 @@ def render_sidebar(base_path):
 </div>
 """, unsafe_allow_html=True)
 
-    # Rutas relativas a la raíz del proyecto — funcionan desde cualquier página
+    # Nombres exactos según el repo
     paginas = [
         ("app.py",                   "⚽ Inicio"),
         ("pages/1_Plantel_ficha.py", "👥 Plantel"),
         ("pages/2_Mapa_cancha.py",   "🗺️ Campo"),
-        ("pages/3_Fixture.py",       "🗓️ Fixture"),
-        ("pages/4_Alertas.py",       "🚨 Alertas"),
-        ("pages/5_Videos.py",        "🎬 Videos"),
-        ("pages/6_Reporte.py",       "📄 Reporte"),
+        ("pages/3_Plantilla.py",     "📋 Plantilla"),
+        ("pages/4_Fixture.py",       "🗓️ Fixture"),
+        ("pages/5_Alertas.py",       "🚨 Alertas"),
+        ("pages/6_Videos.py",        "🎬 Videos"),
+        ("pages/7_Reporte.py",       "📄 Reporte"),
     ]
 
     for ruta, nombre in paginas:
