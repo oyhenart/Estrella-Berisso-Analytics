@@ -258,7 +258,7 @@ def radar_jugador(nombre: str, posicion: str, eventos: pd.DataFrame, color: str)
     fig = go.Figure(go.Scatterpolar(
         r=vals_c, theta=cats_c,
         fill="toself",
-        fillcolor=color + "26",
+        fillcolor=f"rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},0.15)",
         line=dict(color=color, width=2.5),
         marker=dict(color=color, size=7),
     ))
