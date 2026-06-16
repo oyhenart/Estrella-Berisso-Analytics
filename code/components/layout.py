@@ -1,7 +1,6 @@
 # ==========================================
 # Archivo: components/layout.py (Optimizado)
 # ==========================================
-
 import streamlit as st
 import os
 
@@ -15,24 +14,20 @@ def inject_css():
 footer { visibility: hidden; }
 header { visibility: hidden; }
 [data-testid="stSidebarNav"] { display: none; }
-
 .stApp {
     background: #090e17;
     color: #E5E7EB;
 }
-
 .block-container {
     padding-top: 2rem !important;
     padding-left: 2.5rem !important;
     padding-right: 2.5rem !important;
     max-width: 1450px;
 }
-
 section[data-testid="stSidebar"] {
     background: #0d131f;
     border-right: 1px solid rgba(255,255,255,0.03);
 }
-
 html, body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -44,7 +39,7 @@ html, body {
 # ==========================
 def render_sidebar(base_path):
     escudo = os.path.join(base_path, "static", "escudo.png")
-    
+
     if os.path.exists(escudo):
         st.sidebar.image(escudo, width=80)
 
@@ -60,19 +55,24 @@ def render_sidebar(base_path):
 </div>
 """, unsafe_allow_html=True)
 
+    # ── Páginas activas ──────────────────────────────────────────────────────
+    # IMPORTANTE: solo listar archivos que existen en pages/.
+    # Si una página no existe, Streamlit lanza StreamlitPageNotFoundError.
     paginas = [
-        ("app.py", "⚽ Inicio"),
-        ("pages/1_Estadisticas.py", "📊 Estadísticas"),
-        ("pages/2_Mapa_cancha.py", "🗺️ Campo"),
-        ("pages/3_Plantilla.py", "👥 Plantilla"),
-        ("pages/4_Fixture.py", "🗓️ Fixture"),
-        ("pages/5_Alertas.py", "🚨 Alertas"),
-        ("pages/6_Videos.py", "🎬 Videos"),
-        ("pages/7_Reporte.py", "📄 Reporte")
+        ("app.py",                      "⚽ Inicio"),
+        ("pages/1_Plantel_ficha.py",    "👥 Plantel"),
+        ("pages/2_Mapa_cancha.py",      "🗺️ Campo"),
+        ("pages/3_Fixture.py",          "🗓️ Fixture"),
+        ("pages/4_Alertas.py",          "🚨 Alertas"),
+        ("pages/5_Videos.py",           "🎬 Videos"),
+        ("pages/6_Reporte.py",          "📄 Reporte"),
     ]
 
     for ruta, nombre in paginas:
-        st.sidebar.page_link(ruta, label=nombre)
+        ruta_abs = os.path.join(base_path, ruta)
+        # Solo renderizar el link si el archivo realmente existe
+        if os.path.exists(ruta_abs):
+            st.sidebar.page_link(ruta, label=nombre)
 
 # ==========================
 # HEADER
