@@ -1,11 +1,9 @@
-# ==========================
-# L1) IMPORTS
-# ==========================
-
 import streamlit as st
 import os
+
+
 # ==========================
-# L2) CSS GLOBAL
+# CSS
 # ==========================
 
 def inject_css():
@@ -29,7 +27,7 @@ display:none;
 background:
 linear-gradient(
 180deg,
-#0B1120,
+#09111F,
 #111827
 );
 }
@@ -46,7 +44,7 @@ section[data-testid="stSidebar"]{
 background:
 linear-gradient(
 180deg,
-#0B1120,
+#09111F,
 #111827
 );
 
@@ -55,39 +53,10 @@ border-right:
 
 }
 
-button[role="tab"]{
-
-background:#111827;
-
-border:none;
-
-border-radius:10px;
-
-}
-
-button[aria-selected="true"]{
-
-background:#E23E3E;
-
-}
-
-::-webkit-scrollbar{
-width:8px;
-}
-
-::-webkit-scrollbar-thumb{
-
-background:#374151;
-
-border-radius:999px;
-
-}
-
 html,
 body{
 
 font-family:
-Inter,
 sans-serif;
 
 }
@@ -95,8 +64,10 @@ sans-serif;
 </style>
 """,
 unsafe_allow_html=True)
+
+
 # ==========================
-# L3) SIDEBAR
+# SIDEBAR
 # ==========================
 
 def render_sidebar(base_path):
@@ -107,143 +78,53 @@ def render_sidebar(base_path):
         "escudo.png"
     )
 
-    if os.path.exists(
-        escudo
-    ):
+    if os.path.exists(escudo):
 
         st.sidebar.image(
             escudo,
-            width=82
+            width=80
         )
 
     st.sidebar.markdown(
         """
+Club Atlético  
+**Estrella de Berisso**
 
-<div style="
-
-padding-bottom:18px;
-
-">
-
-<div style="
-
-font-size:1.1rem;
-
-font-weight:800;
-
-color:#F9FAFB;
-
-">
-
-Club Atlético
-
-<br>
-
-Estrella de Berisso
-
-</div>
-
-
-<div style="
-
-margin-top:8px;
-
-color:#6B7280;
-
-letter-spacing:3px;
-
-font-size:.72rem;
-
-text-transform:uppercase;
-
-">
-
+<small style='color:#6B7280'>
 La Cebra
+</small>
 
-</div>
-
-
-<div style="
-
-margin-top:20px;
-
-height:1px;
-
-background:
-
-linear-gradient(
-to right,
-#E23E3E,
-transparent
-);
-
-">
-
-</div>
-
-
-<div style="
-
-margin-top:20px;
-
-color:#9CA3AF;
-
-font-size:.72rem;
-
-letter-spacing:2px;
-
-text-transform:uppercase;
-
-">
+---
 
 IAO Football Analytics
 
-</div>
-
-
-<div style="
-
-margin-top:6px;
-
-color:#6B7280;
-
-font-size:.80rem;
-
-">
-
-Datos → contexto → decisiones
-
-</div>
-
-</div>
+<small style='color:#6B7280'>
+Datos → decisiones
+</small>
 
 """,
 unsafe_allow_html=True
     )
 
-
-
     paginas = [
 
-("app.py","⚽ Inicio"),
+        ("app.py","⚽ Inicio"),
 
-("pages/1_Estadisticas.py","📊 Estadísticas"),
+        ("pages/1_Estadisticas.py","📊 Estadísticas"),
 
-("pages/2_Mapa_cancha.py","🗺️ Campo"),
+        ("pages/2_Mapa_cancha.py","🗺️ Campo"),
 
-("pages/3_Plantilla.py","👥 Plantilla"),
+        ("pages/3_Plantilla.py","👥 Plantilla"),
 
-("pages/4_Fixture.py","🗓️ Fixture"),
+        ("pages/4_Fixture.py","🗓️ Fixture"),
 
-("pages/5_Alertas.py","🚨 Alertas"),
+        ("pages/5_Alertas.py","🚨 Alertas"),
 
-("pages/6_Videos.py","🎬 Videos"),
+        ("pages/6_Videos.py","🎬 Videos"),
 
-("pages/7_Reporte.py","📄 Reporte")
+        ("pages/7_Reporte.py","📄 Reporte")
 
-]
-
-
+    ]
 
     for ruta, nombre in paginas:
 
@@ -252,8 +133,9 @@ unsafe_allow_html=True
             label=nombre
         )
 
+
 # ==========================
-# L4) HEADER
+# HEADER
 # ==========================
 
 def render_header(
@@ -262,84 +144,31 @@ def render_header(
 ):
 
     st.markdown(
-        f"""
+f"""
+
+<div>
 
 <div style="
-
-margin-bottom:34px;
-
-">
-
-<div style="
-
 color:#E23E3E;
-
-font-size:.78rem;
-
+font-size:.8rem;
 font-weight:700;
-
-letter-spacing:3px;
-
-text-transform:uppercase;
-
 ">
 
 {subtitle}
 
 </div>
 
-
-<div style="
-
-font-size:2.6rem;
-
-font-weight:900;
-
-color:#F9FAFB;
-
+<h1 style="
+color:white;
 margin-top:8px;
-
-line-height:1;
-
 ">
 
 {title}
 
-</div>
-
-
-<div style="
-
-margin-top:16px;
-
-height:1px;
-
-background:
-
-linear-gradient(
-to right,
-rgba(226,62,62,.35),
-transparent
-);
-
-">
-
-</div>
-
+</h1>
 
 </div>
 
 """,
 unsafe_allow_html=True
 )
-
-
-
-
-
-
-
-
-
-
-
