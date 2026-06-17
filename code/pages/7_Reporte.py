@@ -180,12 +180,26 @@ def grafico_presion_rival(df_p, ax):
 # ── Gráfico 3: Actividad por minuto ──────────────────────────────────────────
 def grafico_actividad(df_p, ax):
     ax.set_facecolor("#F2EEE7")
-    act = df_p.groupby("Mins")["Event"].count()
+
+    df_p = df_p.copy()
+    df_p["Mins"] = pd.to_numeric(df_p["Mins"], errors="coerce")
+
+    # Minuto real de partido: si es mitad 2, sumamos el último minuto de mitad 1
+    primer_tiempo = df_p[df_p["mitad"] == 1]
+    offset = primer_tiempo["Mins"].max() if not primer_tiempo.empty else 45
+    if pd.isna(offset):
+        offset = 45
+
+    df_p["Mins_real"] = df_p["Mins"]
+    df_p.loc[df_p["mitad"] == 2, "Mins_real"] = df_p["Mins"] + offset
+
+    act = df_p.groupby("Mins_real")["Event"].count()
     bars = ax.bar(act.index.astype(float), act.values, color="#7A6A5E", width=0.8)
+
     if len(act) > 0:
         top_mins = act.nlargest(2)
         for m_min, m_val in top_mins.items():
-            events_m = df_p[df_p["Mins"] == m_min]
+            events_m = df_p[df_p["Mins_real"] == m_min]
             if not events_m.empty:
                 ev_counts = events_m["Event"].value_counts()
                 top_ev = ev_counts.index[0]; top_cnt = ev_counts.iloc[0]
@@ -195,7 +209,8 @@ def grafico_actividad(df_p, ax):
                 ax.text(float(m_min), m_val + 0.3, f"Min {int(float(m_min))}\n{top_ev.title()} ({top_cnt})",
                         color="#A83232", fontsize=7.5, ha="center", va="bottom", fontweight="bold",
                         bbox=dict(boxstyle="round,pad=0.2", facecolor="#FAF7F2", edgecolor="#A83232", lw=0.5, alpha=0.9))
-    ax.axvline(45, color="#A83232", linestyle="--", linewidth=1, alpha=0.7, label="HT")
+
+    ax.axvline(offset, color="#A83232", linestyle="--", linewidth=1, alpha=0.7, label="HT")
     ax.set_xlabel("Minuto", color="#3D2C24", fontsize=9, fontfamily="serif")
     ax.set_ylabel("Eventos", color="#3D2C24", fontsize=9, fontfamily="serif")
     ax.tick_params(colors="#3D2C24", labelsize=8)
