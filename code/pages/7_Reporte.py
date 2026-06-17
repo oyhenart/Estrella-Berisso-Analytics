@@ -120,6 +120,29 @@ def draw_half_pitch_horizontal_layout(ax):
     ax.plot([(100-ARCO)/2, (100+ARCO)/2], [100, 100], color="#7A6A5E", linewidth=3.5)
     ax.add_patch(mpatches.Rectangle((-2, 48), 104, 54, fill=False, edgecolor="#7A6A5E", lw=2, zorder=10))
 
+def pase_completo(df_p, idx, x_dest, y_dest, tolerancia=5, ventana=4):
+
+    for j in range(idx + 1, min(idx + ventana + 1, len(df_p))):
+
+        sig = df_p.iloc[j]
+
+        try:
+            x_sig = float(sig["X"])
+            y_sig = float(sig["Y"])
+        except:
+            continue
+
+        distancia = math.sqrt(
+            (x_dest - x_sig) ** 2 +
+            (y_dest - y_sig) ** 2
+        )
+
+        if distancia <= tolerancia:
+            return True
+
+    return False
+
+
 # ── Gráfico 1: Mapa de pases Último Tercio ────────────────────────────────────
 def grafico_pases_ultimo_tercio(df_p, ax):
     draw_half_pitch_horizontal_layout(ax)
