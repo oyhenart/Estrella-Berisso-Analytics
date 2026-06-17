@@ -287,60 +287,39 @@ if proximo is not None:
 
 st.divider()
 
-st.subheader(
-    "🧠 Preparación del Rival"
-)
+if proximo is not None:
 
-rival_seleccionado = st.selectbox(
-    "Seleccionar rival",
-    list(rivales_data.keys())
-)
+    rival_actual = proximo["rival"]
 
-rival = rivales_data[
-    rival_seleccionado
-]
-
-col1, col2 = st.columns(2)
-
-with col1:
-
-    st.metric(
-        "Sistema Táctico Base",
-        rival["sistema"]
+    st.subheader(
+        f"🧠 Informe de {rival_actual}"
     )
 
-with col2:
+    if rival_actual in rivales_data:
 
-    st.metric(
-        "Estado de Forma",
-        rival["forma"].upper()
-    )
+        rival = rivales_data[
+            rival_actual
+        ]
 
-st.divider()
+    else:
 
-col1, col2 = st.columns(2)
-
-with col1:
-
-    st.markdown(
-        "### ⚔️ Patrones Ofensivos"
-    )
-
-    for accion in rival["ataque"]:
-        st.markdown(
-            f"- {accion}"
+        st.warning(
+            f"No existe un informe cargado para {rival_actual}"
         )
 
-with col2:
+        st.info(
+            "Cargar sistema táctico, patrones, ABP y videos para este rival."
+        )
 
-    st.markdown(
-        "### 🚨 Debilidades Detectadas"
+        st.stop()
+
+else:
+
+    st.info(
+        "No hay partidos pendientes."
     )
 
-    for accion in rival["debilidades"]:
-        st.markdown(
-            f"- {accion}"
-        )
+    st.stop()
 
 # =========================
 # ABP
