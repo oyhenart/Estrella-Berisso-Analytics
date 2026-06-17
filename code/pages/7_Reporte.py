@@ -123,35 +123,103 @@ def draw_half_pitch_horizontal_layout(ax):
 # ── Gráfico 1: Mapa de pases Último Tercio ────────────────────────────────────
 def grafico_pases_ultimo_tercio(df_p, ax):
     draw_half_pitch_horizontal_layout(ax)
-    ax.plot([-2, 102], [66.6, 66.6], color="#7A6A5E", linestyle=":", linewidth=1.2, zorder=2)
+
+    ax.plot(
+        [-2, 102],
+        [66.6, 66.6],
+        color="#7A6A5E",
+        linestyle=":",
+        linewidth=1.2,
+        zorder=2
+    )
+
     pases = df_p[df_p["Event"] == "pase"].copy()
-    for col in ["X","Y","X2","Y2"]:
+
+    for col in ["X", "Y", "X2", "Y2"]:
         pases[col] = pd.to_numeric(pases[col], errors="coerce")
-    completos = 0; incompletos = 0
+
+    completos = 0
+    incompletos = 0
+
     for idx, row in pases.iterrows():
-        orig_x1, orig_y1 = float(row["X"]), float(row["Y"])
-        orig_x2, orig_y2 = row["X2"], row["Y2"]
-        if pd.isna(orig_x1) or pd.isna(orig_y1) or pd.isna(orig_x2) or pd.isna(orig_y2): continue
-        if orig_x1 < 66.6: continue
+
+        orig_x1 = float(row["X"])
+        orig_y1 = float(row["Y"])
+        orig_x2 = row["X2"]
+        orig_y2 = row["Y2"]
+
+        if (
+            pd.isna(orig_x1)
+            or pd.isna(orig_y1)
+            or pd.isna(orig_x2)
+            or pd.isna(orig_y2)
+        ):
+            continue
+
+        if orig_x1 < 66.6:
+            continue
+
         x1, y1 = orig_y1, orig_x1
         x2, y2 = float(orig_y2), float(orig_x2)
-        sig_event = ""
-        if idx + 1 < len(df_p):
-            sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
-        complete = sig_event not in ["perdida",""]
+
+        complete = pase_completo(
+            df_p=df_p,
+            idx=idx,
+            x_dest=float(orig_x2),
+            y_dest=float(orig_y2),
+            tolerancia=5,
+            ventana=4
+        )
+
         color = "#2E6F40" if complete else "#C93B3B"
         alpha = 0.8 if complete else 0.5
-        if complete: completos += 1
-        else: incompletos += 1
-        ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
-            arrowprops=dict(arrowstyle="->", color=color, lw=1.5, alpha=alpha))
-        ax.plot(x1, y1, "o", color=color, markersize=3, alpha=alpha)
+
+        if complete:
+            completos += 1
+        else:
+            incompletos += 1
+
+        ax.annotate(
+            "",
+            xy=(x2, y2),
+            xytext=(x1, y1),
+            arrowprops=dict(
+                arrowstyle="->",
+                color=color,
+                lw=1.5,
+                alpha=alpha
+            )
+        )
+
+        ax.plot(
+            x1,
+            y1,
+            "o",
+            color=color,
+            markersize=3,
+            alpha=alpha
+        )
+
     legend = [
-        mpatches.Patch(color="#2E6F40", label=f"Completo ({completos})"),
-        mpatches.Patch(color="#C93B3B", label=f"Incompleto ({incompletos})"),
+        mpatches.Patch(
+            color="#2E6F40",
+            label=f"Completo ({completos})"
+        ),
+        mpatches.Patch(
+            color="#C93B3B",
+            label=f"Incompleto ({incompletos})"
+        ),
     ]
-    ax.legend(handles=legend, loc="upper left", framealpha=0.9,
-              facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
+
+    ax.legend(
+        handles=legend,
+        loc="upper left",
+        framealpha=0.9,
+        facecolor="#FAF7F2",
+        edgecolor="#7A6A5E",
+        labelcolor="#3D2C24",
+        fontsize=8
+    )
 
 # ── Gráfico 2: Heatmap Presión en Campo Rival ─────────────────────────────────
 def grafico_presion_rival(df_p, ax):
@@ -219,35 +287,104 @@ def grafico_actividad(df_p, ax):
 
 # ── Gráfico 4: Pases Largos al Último Tercio ──────────────────────────────────
 def grafico_pases_largos(df_p, ax):
+
     draw_pitch(ax)
+
     pases = df_p[df_p["Event"] == "pase"].copy()
-    for col in ["X","Y","X2","Y2"]:
+
+    for col in ["X", "Y", "X2", "Y2"]:
         pases[col] = pd.to_numeric(pases[col], errors="coerce")
-    completos = 0; incompletos = 0
+
+    completos = 0
+    incompletos = 0
+
     for idx, row in pases.iterrows():
-        x1, y1 = float(row["X"]), float(row["Y"])
-        x2, y2 = row["X2"], row["Y2"]
-        if pd.isna(x1) or pd.isna(y1) or pd.isna(x2) or pd.isna(y2): continue
-        x2, y2 = float(x2), float(y2)
-        distancia = math.sqrt((x2-x1)**2 + (y2-y1)**2)
-        if x1 < 66.6 and x2 >= 66.6 and distancia >= 30:
-            sig_event = ""
-            if idx + 1 < len(df_p):
-                sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
-            complete = sig_event not in ["perdida", ""]
+
+        x1 = float(row["X"])
+        y1 = float(row["Y"])
+        x2 = row["X2"]
+        y2 = row["Y2"]
+
+        if (
+            pd.isna(x1)
+            or pd.isna(y1)
+            or pd.isna(x2)
+            or pd.isna(y2)
+        ):
+            continue
+
+        x2 = float(x2)
+        y2 = float(y2)
+
+        distancia = math.sqrt(
+            (x2 - x1) ** 2 +
+            (y2 - y1) ** 2
+        )
+
+        if (
+            x1 < 66.6
+            and x2 >= 66.6
+            and distancia >= 30
+        ):
+
+            complete = pase_completo(
+                df_p=df_p,
+                idx=idx,
+                x_dest=x2,
+                y_dest=y2,
+                tolerancia=5,
+                ventana=4
+            )
+
             color = "#2E6F40" if complete else "#C93B3B"
             alpha = 0.8 if complete else 0.5
-            if complete: completos += 1
-            else: incompletos += 1
-            ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
-                arrowprops=dict(arrowstyle="-|>", color=color, lw=1.5, alpha=alpha))
-            ax.plot(x1, y1, "o", color=color, markersize=4, alpha=alpha)
+
+            if complete:
+                completos += 1
+            else:
+                incompletos += 1
+
+            ax.annotate(
+                "",
+                xy=(x2, y2),
+                xytext=(x1, y1),
+                arrowprops=dict(
+                    arrowstyle="-|>",
+                    color=color,
+                    lw=1.5,
+                    alpha=alpha
+                )
+            )
+
+            ax.plot(
+                x1,
+                y1,
+                "o",
+                color=color,
+                markersize=4,
+                alpha=alpha
+            )
+
     legend = [
-        mpatches.Patch(color="#2E6F40", label=f"Completo ({completos})"),
-        mpatches.Patch(color="#C93B3B", label=f"Incompleto ({incompletos})"),
+        mpatches.Patch(
+            color="#2E6F40",
+            label=f"Completo ({completos})"
+        ),
+        mpatches.Patch(
+            color="#C93B3B",
+            label=f"Incompleto ({incompletos})"
+        ),
     ]
-    ax.legend(handles=legend, loc="upper left", framealpha=0.9,
-              facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
+
+    ax.legend(
+        handles=legend,
+        loc="upper left",
+        framealpha=0.9,
+        facecolor="#FAF7F2",
+        edgecolor="#7A6A5E",
+        labelcolor="#3D2C24",
+        fontsize=8
+    )
 
 # ── Gráfico 5: Mapa de Remates ────────────────────────────────────────────────
 def grafico_remates(df_p, ax):
