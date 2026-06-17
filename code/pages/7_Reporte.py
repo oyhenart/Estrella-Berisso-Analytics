@@ -230,7 +230,7 @@ def grafico_pases_largos(df_p, ax):
         if pd.isna(x1) or pd.isna(y1) or pd.isna(x2) or pd.isna(y2): continue
         x2, y2 = float(x2), float(y2)
         distancia = math.sqrt((x2-x1)**2 + (y2-y1)**2)
-        if x2 >= 66.6 and distancia >= 30:
+        if x1 < 66.6 and x2 >= 66.6 and distancia >= 30:
             sig_event = ""
             if idx + 1 < len(df_p):
                 sig_event = str(df_p.iloc[idx + 1]["Event"]).lower()
