@@ -1,5 +1,5 @@
 # ==========================================
-# Archivo: components/layout.py (Optimizado)
+# Archivo: components/layout.py (con soporte mobile)
 # ==========================================
 import streamlit as st
 import os
@@ -14,6 +14,28 @@ def inject_css():
 footer { visibility: hidden; }
 header { visibility: hidden; }
 [data-testid="stSidebarNav"] { display: none; }
+
+/* ── BOTÓN HAMBURGUESA MOBILE ── */
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    background: #E23E3E !important;
+    border-radius: 10px !important;
+    width: 44px !important;
+    height: 44px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 14px rgba(226,62,62,.45) !important;
+    top: 14px !important;
+    left: 14px !important;
+    position: fixed !important;
+    z-index: 9999 !important;
+}
+[data-testid="collapsedControl"] svg {
+    fill: white !important;
+    stroke: white !important;
+}
+
 .stApp {
     background: #090e17;
     color: #E5E7EB;
@@ -24,6 +46,20 @@ header { visibility: hidden; }
     padding-right: 2.5rem !important;
     max-width: 1450px;
 }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+    .block-container {
+        padding-top: 4rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-bottom: 80px !important;
+    }
+    div[data-testid="column"] {
+        min-width: 0 !important;
+    }
+}
+
 section[data-testid="stSidebar"] {
     background: #0d131f;
     border-right: 1px solid rgba(255,255,255,0.03);
@@ -35,14 +71,61 @@ html, body {
 """, unsafe_allow_html=True)
 
 # ==========================
+# MOBILE NAV (barra inferior)
+# ==========================
+def render_mobile_nav():
+    st.markdown("""
+<style>
+@media (max-width: 768px) {
+    .mobile-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9998;
+        background: #0d131f;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding: 8px 0 12px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+    .mobile-nav a {
+        color: #9CA3AF;
+        text-decoration: none;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .mobile-nav a .icon { font-size: 1.3rem; }
+}
+@media (min-width: 769px) {
+    .mobile-nav { display: none; }
+}
+</style>
+<div class="mobile-nav">
+    <a href="/"><span class="icon">⚽</span>Inicio</a>
+    <a href="/Plantel_ficha"><span class="icon">👥</span>Plantel</a>
+    <a href="/Mapa_cancha"><span class="icon">🗺️</span>Campo</a>
+    <a href="/Fixture"><span class="icon">🗓️</span>Fixture</a>
+    <a href="/Alertas"><span class="icon">🚨</span>Alertas</a>
+    <a href="/Reporte"><span class="icon">📄</span>Reporte</a>
+</div>
+""", unsafe_allow_html=True)
+
+# ==========================
 # SIDEBAR
 # ==========================
 def render_sidebar(base_path):
     escudo = os.path.join(base_path, "static", "escudo.png")
-
     if os.path.exists(escudo):
         st.sidebar.image(escudo, width=80)
-
     st.sidebar.markdown("""
 <div style="margin-bottom: 20px;">
     <h3 style="color: #F9FAFB; margin: 0; font-size: 1.25rem; font-weight: 800; line-height: 1.2;">Club Atlético<br>Estrella de Berisso</h3>
@@ -54,11 +137,8 @@ def render_sidebar(base_path):
     <small style='color:#6B7280; font-weight: 500;'>Datos → Decisiones</small>
 </div>
 """, unsafe_allow_html=True)
-
-    # page_link acepta rutas absolutas al archivo .py
-    # base_path = .../code/  →  pages están en .../code/pages/
     paginas = [
-        (os.path.join(base_path, "app.py"),                   "⚽ Inicio"),
+        (os.path.join(base_path, "app.py"),                      "⚽ Inicio"),
         (os.path.join(base_path, "pages", "1_Plantel_ficha.py"), "👥 Plantel"),
         (os.path.join(base_path, "pages", "2_Mapa_cancha.py"),   "🗺️ Campo"),
         (os.path.join(base_path, "pages", "3_Plantilla.py"),     "📋 Plantilla"),
@@ -67,7 +147,6 @@ def render_sidebar(base_path):
         (os.path.join(base_path, "pages", "6_Videos.py"),        "🎬 Videos"),
         (os.path.join(base_path, "pages", "7_Reporte.py"),       "📄 Reporte"),
     ]
-
     for ruta_abs, nombre in paginas:
         if os.path.exists(ruta_abs):
             st.sidebar.page_link(ruta_abs, label=nombre)
