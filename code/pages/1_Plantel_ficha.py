@@ -293,13 +293,18 @@ def radar_jugador(nombre: str, posicion: str, eventos: pd.DataFrame, color: str)
     return fig
 
 
+@st.cache_data(show_spinner=False)
 def foto_html(foto_path: str) -> str:
-    """Devuelve HTML de imagen o placeholder — sin llamadas a st.image en loop."""
+    """Devuelve HTML de imagen en base64 o placeholder. Base64 funciona en cualquier entorno."""
+    import base64, mimetypes
     if os.path.exists(foto_path):
-        # Usamos la ruta relativa que Streamlit sirve en /static
-        # Si no está en static, caemos al placeholder
-        rel = os.path.relpath(foto_path, BASE)
-        return f"<img src='app/{rel}' loading='lazy' style='width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;margin-bottom:8px'>"
+        mime, _ = mimetypes.guess_type(foto_path)
+        mime = mime or "image/jpeg"
+        with open(foto_path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        return (f"<img src='data:{mime};base64,{b64}' "
+                f"style='width:100%;aspect-ratio:1/1;object-fit:cover;"
+                f"border-radius:6px;margin-bottom:8px'>")
     return "<div class='cromo-placeholder'>👤</div>"
 
 
