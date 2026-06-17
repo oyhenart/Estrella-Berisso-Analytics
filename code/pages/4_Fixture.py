@@ -1,3 +1,4 @@
+```python
 import streamlit as st
 import pandas as pd
 import os
@@ -26,20 +27,128 @@ render_sidebar(BASE)
 
 render_header(
     "Torneo Promocional Amateur 2026",
-    "Fixture y resultados"
+    "Centro de planificación táctica"
 )
 
+# =========================
+# DATOS SIMULADOS DE RIVALES
+# =========================
+
+rivales_data = {
+
+    "Everton": {
+
+        "sistema": "1-4-4-2",
+
+        "forma": "alta",
+
+        "ataque": [
+            "Juego directo sobre delantero referencia",
+            "Centros tempranos desde banda derecha",
+            "Segunda jugada tras pelotazo"
+        ],
+
+        "debilidades": [
+            "Espacios detrás de los laterales",
+            "Mal repliegue tras pérdida",
+            "Problemas defendiendo cambios de orientación"
+        ],
+
+        "alertas_abp": {
+            "lanzador": "N°10 - Pierna derecha",
+            "rematadores": [
+                "N°2",
+                "N°9",
+                "N°6"
+            ]
+        },
+
+        "videos": [
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        ]
+    },
+
+    "CRIBA": {
+
+        "sistema": "1-4-3-3",
+
+        "forma": "media",
+
+        "ataque": [
+            "Asociaciones interiores",
+            "Extremos muy profundos",
+            "Laterales proyectados"
+        ],
+
+        "debilidades": [
+            "Transiciones defensivas lentas",
+            "Central izquierdo vulnerable en velocidad"
+        ],
+
+        "alertas_abp": {
+            "lanzador": "N°8",
+            "rematadores": [
+                "N°4",
+                "N°9"
+            ]
+        },
+
+        "videos": [
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        ]
+    }
+}
+
+
+# =========================
+# FUNCIONES
+# =========================
 
 @st.cache_data(ttl=0)
 def cargar_fixture():
     return pd.read_csv(
-        os.path.join(BASE, "data", "fixture.csv")
+        os.path.join(
+            BASE,
+            "data",
+            "fixture.csv"
+        )
     )
 
 
+def color_forma(forma):
+
+    if forma == "alta":
+        return "#16a34a"
+
+    elif forma == "media":
+        return "#f59e0b"
+
+    return "#dc2626"
+
+
+# =========================
+# CARGA DE DATOS
+# =========================
+
 df = cargar_fixture()
 
-jugados = df[df["estado"] == "Jugado"]
+jugados = df[
+    df["estado"] == "Jugado"
+]
+
+pendientes = df[
+    df["estado"] != "Jugado"
+]
+
+if len(pendientes) > 0:
+    proximo = pendientes.iloc[0]
+else:
+    proximo = None
+
+
+# =========================
+# KPIS DEL TORNEO
+# =========================
 
 if len(jugados) > 0:
 
@@ -64,10 +173,18 @@ if len(jugados) > 0:
         ]
     )
 
-    gf = int(jugados["goles_favor"].sum())
-    gc = int(jugados["goles_contra"].sum())
+    gf = int(
+        jugados["goles_favor"].sum()
+    )
 
-    puntos = ganados * 3 + empatados
+    gc = int(
+        jugados["goles_contra"].sum()
+    )
+
+    puntos = (
+        ganados * 3 +
+        empatados
+    )
 
     col1, col2, col3 = st.columns(3)
 
@@ -109,9 +226,201 @@ else:
         "⏳ El torneo aún no comenzó."
     )
 
+# =========================
+# PARTIDO DE LA SEMANA
+# =========================
+
 st.divider()
 
-st.subheader("Fechas")
+st.subheader(
+    "🎯 Partido de la Semana"
+)
+
+if proximo is not None:
+
+    rival_proximo = proximo["rival"]
+
+    info_rival = rivales_data.get(
+        rival_proximo,
+        None
+    )
+
+    color = "#6b7280"
+
+    if info_rival:
+        color = color_forma(
+            info_rival["forma"]
+        )
+
+    condicion = (
+        "🏠 Local"
+        if proximo["condicion"] == "Local"
+        else "✈️ Visitante"
+    )
+
+    st.markdown(
+        f"""
+        <div style="
+            background:{color};
+            padding:25px;
+            border-radius:15px;
+            color:white;
+            text-align:center;
+            margin-bottom:20px;
+        ">
+            <h2>
+                Estrella de Berisso vs {rival_proximo}
+            </h2>
+            <h4>
+                Fecha {int(proximo['fecha'])}
+            </h4>
+            <h4>
+                {condicion}
+            </h4>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# =========================
+# ANALISIS DEL RIVAL
+# =========================
+
+st.divider()
+
+st.subheader(
+    "🧠 Preparación del Rival"
+)
+
+rival_seleccionado = st.selectbox(
+    "Seleccionar rival",
+    list(rivales_data.keys())
+)
+
+rival = rivales_data[
+    rival_seleccionado
+]
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.metric(
+        "Sistema Táctico Base",
+        rival["sistema"]
+    )
+
+with col2:
+
+    st.metric(
+        "Estado de Forma",
+        rival["forma"].upper()
+    )
+
+st.divider()
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.markdown(
+        "### ⚔️ Patrones Ofensivos"
+    )
+
+    for accion in rival["ataque"]:
+        st.markdown(
+            f"- {accion}"
+        )
+
+with col2:
+
+    st.markdown(
+        "### 🚨 Debilidades Detectadas"
+    )
+
+    for accion in rival["debilidades"]:
+        st.markdown(
+            f"- {accion}"
+        )
+
+# =========================
+# ABP
+# =========================
+
+st.divider()
+
+st.subheader(
+    "🎯 Alertas Balón Parado"
+)
+
+abp = rival["alertas_abp"]
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.info(
+        f"Lanzador Principal: {abp['lanzador']}"
+    )
+
+with col2:
+
+    st.warning(
+        "Rematadores Principales"
+    )
+
+    for jugador in abp["rematadores"]:
+        st.markdown(
+            f"- {jugador}"
+        )
+
+# =========================
+# REPOSITORIO DE VIDEO
+# =========================
+
+st.divider()
+
+st.subheader(
+    "🎥 Repositorio de Video"
+)
+
+for video in rival["videos"]:
+
+    st.video(video)
+
+# =========================
+# PLAN DE PARTIDO
+# =========================
+
+st.divider()
+
+st.subheader(
+    "📋 Plan de Partido"
+)
+
+st.text_area(
+    "Objetivos tácticos de la semana",
+    placeholder="""
+✓ Presionar salida del central izquierdo
+
+✓ Buscar espalda de los laterales
+
+✓ Evitar faltas laterales
+
+✓ Atacar segundo palo en corners
+""",
+    height=200
+)
+
+# =========================
+# FIXTURE COMPLETO
+# =========================
+
+st.divider()
+
+st.subheader(
+    "🗓️ Fixture Completo"
+)
 
 for _, row in df.iterrows():
 
@@ -120,6 +429,7 @@ for _, row in df.iterrows():
     )
 
     with col1:
+
         st.markdown(
             f"**Fecha {int(row['fecha'])}**"
         )
@@ -142,29 +452,55 @@ for _, row in df.iterrows():
 
         if row["estado"] == "Jugado":
 
-            gf = int(row["goles_favor"])
-            gc = int(row["goles_contra"])
+            gf = int(
+                row["goles_favor"]
+            )
 
-            resultado = f"{gf} - {gc}"
+            gc = int(
+                row["goles_contra"]
+            )
+
+            resultado = (
+                f"{gf} - {gc}"
+            )
 
             if gf > gc:
-                st.success(resultado)
+
+                st.success(
+                    resultado
+                )
 
             elif gf == gc:
-                st.warning(resultado)
+
+                st.warning(
+                    resultado
+                )
 
             else:
-                st.error(resultado)
+
+                st.error(
+                    resultado
+                )
 
         else:
 
-            st.info("Pendiente")
+            st.info(
+                "Pendiente"
+            )
 
     with col4:
 
         if row["condicion"] == "Local":
-            st.markdown("🟢 Local")
+
+            st.markdown(
+                "🟢 Local"
+            )
+
         else:
-            st.markdown("🔵 Visitante")
+
+            st.markdown(
+                "🔵 Visitante"
+            )
 
     st.divider()
+```
