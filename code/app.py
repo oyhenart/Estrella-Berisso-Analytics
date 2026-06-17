@@ -20,18 +20,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ==========================
-# 3) LAYOUT INIT
-# ==========================
 from components.layout import (
     inject_css,
     render_sidebar,
-    render_header
+    render_header,
+    render_mobile_nav       # ← LÍNEA NUEVA
 )
-
+ 
 inject_css()
 BASE = os.path.dirname(os.path.abspath(__file__))
 render_sidebar(BASE)
+render_mobile_nav()         # ← LÍNEA NUEVA
 render_header("Torneo Promocional Amateur 2026", "Panel de análisis")
 
 # ==========================
