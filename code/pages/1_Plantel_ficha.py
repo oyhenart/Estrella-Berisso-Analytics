@@ -166,14 +166,14 @@ LABEL_METRICAS = {
 # Ajustá estos valores según la realidad de tu plantel.
 # Si un jugador supera el máximo, topa en el borde (100%) sin romper el gráfico.
 ESCALA_RADAR = {
-    "pase":           40,   # 40 pases acumulados = techo del radar
-    "recuperacion":   15,
-    "conduccion":     20,
-    "despeje":        15,
-    "falta cometida": 10,
-    "remate":          8,
-    "gol":             5,
-    "centro":         10,
+    "pase":            136,   # max real del plantel = 113  (Romo)
+    "recuperacion":     63,   # max real = 52  (Romo)
+    "conduccion":       22,   # max real = 18  (Villoldo)
+    "despeje":          65,   # max real = 54  (Sanjiau)
+    "falta cometida":    8,   # max real = 6   (Dedomingo)
+    "remate":            8,   # max real = 6   (Retamozo)
+    "gol":               2,   # max real = 1   (Marinucci)
+    "centro":           21,   # max real = 17  (Barneix)
 }
 
 
