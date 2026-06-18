@@ -7,6 +7,11 @@ CAMBIOS MOBILE v2:
   • Radar desactivado en mobile → reemplazado por métricas simples (mucho más rápido)
   • Imágenes: tamaño fijo pequeño, sin use_container_width en grilla
   • render_mobile_nav() agregado para consistencia con resto de la app
+
+CAMBIOS RADAR v3:
+  • Escala fija por métrica (ESCALA_RADAR) → todos los radares son comparables
+  • range=[0, 100] fijo en eje radial → nunca se auto-ajusta
+  • Tooltip muestra valor real, no el normalizado
 """
 
 import os
@@ -157,6 +162,20 @@ LABEL_METRICAS = {
     "gol": "Goles", "centro": "Centros",
 }
 
+# ── Escala fija por métrica (valor = 100% del radar) ─────────────────────────
+# Ajustá estos valores según la realidad de tu plantel.
+# Si un jugador supera el máximo, topa en el borde (100%) sin romper el gráfico.
+ESCALA_RADAR = {
+    "pase":           40,   # 40 pases acumulados = techo del radar
+    "recuperacion":   15,
+    "conduccion":     20,
+    "despeje":        15,
+    "falta cometida": 10,
+    "remate":          8,
+    "gol":             5,
+    "centro":         10,
+}
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Carga de datos — todo con ttl=0 para evitar datos obsoletos
@@ -264,23 +283,45 @@ def stats_jugador(nombre: str, eventos: pd.DataFrame) -> dict:
 
 
 def radar_jugador(nombre: str, posicion: str, eventos: pd.DataFrame, color: str) -> go.Figure:
-    metricas = METRICAS_POS.get(posicion, ["pase", "recuperacion", "remate"])
-    s        = stats_jugador(nombre, eventos)
-    cats     = [LABEL_METRICAS.get(m, m) for m in metricas]
-    vals     = [s.get(m, 0) for m in metricas]
-    cats_c   = cats + [cats[0]]
-    vals_c   = vals + [vals[0]]
+    metricas  = METRICAS_POS.get(posicion, ["pase", "recuperacion", "remate"])
+    s         = stats_jugador(nombre, eventos)
+
+    cats      = [LABEL_METRICAS.get(m, m) for m in metricas]
+    vals_real = [s.get(m, 0) for m in metricas]
+
+    # Normalizar contra escala fija → 0 a 100
+    # Si el jugador supera el techo definido, topa en 100 sin romper el gráfico
+    vals_norm = [
+        min(round(vals_real[k] / ESCALA_RADAR.get(metricas[k], 1) * 100, 1), 100)
+        for k in range(len(metricas))
+    ]
+
+    # Cerrar el polígono repitiendo el primer punto
+    cats_c      = cats + [cats[0]]
+    vals_norm_c = vals_norm + [vals_norm[0]]
+    vals_real_c = vals_real + [vals_real[0]]
+
     fig = go.Figure(go.Scatterpolar(
-        r=vals_c, theta=cats_c,
+        r=vals_norm_c,
+        theta=cats_c,
         fill="toself",
         fillcolor=f"rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},0.15)",
         line=dict(color=color, width=2.5),
         marker=dict(color=color, size=7),
+        # El tooltip muestra el valor real, no el normalizado
+        customdata=vals_real_c,
+        hovertemplate="%{theta}: <b>%{customdata}</b><extra></extra>",
     ))
+
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, showticklabels=True,
-                            gridcolor="#374151", color="#6B7280", tickfont=dict(size=9)),
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100],         # ← escala fija, nunca se auto-ajusta
+                showticklabels=False,   # los números internos son % relativos, mejor ocultarlos
+                gridcolor="#374151",
+                color="#6B7280",
+            ),
             angularaxis=dict(gridcolor="#374151", color="#9CA3AF"),
             bgcolor="#111827",
         ),
@@ -369,11 +410,6 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 # GRILLA DE CROMOS — renderizada en HTML puro para evitar rerun por imagen
 # La interacción (abrir ficha) se maneja con st.expander debajo de cada cromo
 # ══════════════════════════════════════════════════════════════════════════════
-# Construimos la grilla CSS y los botones de expander con Streamlit nativo.
-# Estrategia:
-#   • HTML de los cromos (imagen + datos) → un solo st.markdown por fila
-#   • Botón "Ver ficha" → st.expander (nativo, sin rerun)
-
 COLS_DESKTOP = 4   # cuántas columnas usa st.columns en desktop
 
 for i in range(0, len(df_filtrado), COLS_DESKTOP):
