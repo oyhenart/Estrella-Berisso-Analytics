@@ -65,6 +65,32 @@ def racha_visual(df):
     return salida
 
 # ==========================
+# 4.1) ESCUDOS
+# ==========================
+ESCUDOS_PATH = os.path.join(BASE, "static", "escudos")
+
+def buscar_escudo(nombre_rival):
+    """Busca el archivo de escudo para un rival, tolerando mayúsculas/minúsculas y extensión."""
+    if not nombre_rival or not os.path.isdir(ESCUDOS_PATH):
+        return None
+    candidatos = [
+        f"{nombre_rival}.png",
+        f"{nombre_rival}.jpg",
+        f"{nombre_rival}.jpeg",
+        f"{nombre_rival}.webp",
+    ]
+    archivos_existentes = os.listdir(ESCUDOS_PATH)
+    archivos_lower = {a.lower(): a for a in archivos_existentes}
+
+    for candidato in candidatos:
+        ruta = os.path.join(ESCUDOS_PATH, candidato)
+        if os.path.exists(ruta):
+            return ruta
+        if candidato.lower() in archivos_lower:
+            return os.path.join(ESCUDOS_PATH, archivos_lower[candidato.lower()])
+    return None
+
+# ==========================
 # 5) PATHS
 # ==========================
 DATA_PATH = os.path.join(BASE, "data", "events_clean.csv")
@@ -161,10 +187,21 @@ else:
     fecha_next = int(partido["fecha"])
     icono = "🏠" if condicion == "Local" else "✈️"
     color_badge = "#22C55E" if condicion == "Local" else "#60A5FA"
+    escudo_next = buscar_escudo(rival_next)
 
     col_match, col_info = st.columns([1.4, 1])
     with col_match:
-        st.markdown(f"<div style='background:#111827; border-radius:14px; padding:26px; min-height:180px; border:1px solid rgba(255,255,255,.04); box-shadow: 0 10px 28px rgba(0,0,0,.28);'><div style='color:#6B7280; text-transform:uppercase; letter-spacing:2px; font-size:.72rem; margin-bottom:10px;'>Fecha {fecha_next}</div><div style='font-size:2rem; font-weight:800; color:#F9FAFB;'>{icono} vs <span style='color:#E23E3E'>{rival_next}</span></div><div style='margin-top:18px;'><span style='background:{color_badge}20; color:{color_badge}; padding:8px 14px; border-radius:10px; font-size:.82rem; font-weight:700;'>{condicion}</span></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='background:#111827; border-radius:14px; padding:26px; min-height:180px; border:1px solid rgba(255,255,255,.04); box-shadow: 0 10px 28px rgba(0,0,0,.28);'><div style='color:#6B7280; text-transform:uppercase; letter-spacing:2px; font-size:.72rem; margin-bottom:10px;'>Fecha {fecha_next}</div>", unsafe_allow_html=True)
+
+        col_escudo, col_texto = st.columns([1, 4])
+        with col_escudo:
+            if escudo_next:
+                st.image(escudo_next, width=64)
+        with col_texto:
+            st.markdown(f"<div style='font-size:2rem; font-weight:800; color:#F9FAFB; padding-top:6px;'>{icono} vs <span style='color:#E23E3E'>{rival_next}</span></div>", unsafe_allow_html=True)
+
+        st.markdown(f"<div style='margin-top:18px;'><span style='background:{color_badge}20; color:{color_badge}; padding:8px 14px; border-radius:10px; font-size:.82rem; font-weight:700;'>{condicion}</span></div></div>", unsafe_allow_html=True)
+
     with col_info:
         st.markdown("<div style='background:#111827; border-radius:14px; padding:22px; min-height:180px; border:1px solid rgba(255,255,255,.04); box-shadow: 0 10px 28px rgba(0,0,0,.28);'><div style='color:#6B7280; text-transform:uppercase; letter-spacing:2px; font-size:.72rem; margin-bottom:16px;'>Atención previa</div><div style='color:#D1D5DB; line-height:1.8; font-size:.88rem;'>• Confirmar disponibilidad<br>• Preparar video rival<br>• Revisar tendencia reciente</div></div>", unsafe_allow_html=True)
 
@@ -235,7 +272,13 @@ else:
     jugadores_num = df_ultimo["Player"].nunique()
     ratio = round(pases / perdidas, 1) if perdidas > 0 else "—"
 
-    st.markdown(f"<div style='color:#9CA3AF; margin-bottom:18px; font-size:.9rem;'>Rival analizado: <span style='color:#F9FAFB; font-weight:700'>{rival_last}</span></div>", unsafe_allow_html=True)
+    escudo_last = buscar_escudo(rival_last)
+    col_e, col_r = st.columns([1, 8])
+    with col_e:
+        if escudo_last:
+            st.image(escudo_last, width=48)
+    with col_r:
+        st.markdown(f"<div style='color:#9CA3AF; padding-top:8px; font-size:.9rem;'>Rival analizado: <span style='color:#F9FAFB; font-weight:700'>{rival_last}</span></div>", unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
