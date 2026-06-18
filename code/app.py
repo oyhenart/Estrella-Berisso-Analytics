@@ -68,6 +68,19 @@ def racha_visual(df):
 # 4.1) ESCUDOS
 # ==========================
 ESCUDOS_PATH = os.path.join(BASE, "static", "escudos")
+ESCUDO_LOCAL = os.path.join(ESCUDOS_PATH, "Local.jpg")
+
+import base64
+
+def escudo_a_base64(ruta):
+    """Convierte un archivo de imagen a base64 para insertarlo inline en HTML."""
+    if not ruta or not os.path.exists(ruta):
+        return None
+    ext = os.path.splitext(ruta)[1].lower().replace(".", "")
+    mime = "jpeg" if ext in ["jpg", "jpeg"] else ext
+    with open(ruta, "rb") as f:
+        data = base64.b64encode(f.read()).decode("utf-8")
+    return f"data:image/{mime};base64,{data}"
 
 def buscar_escudo(nombre_rival):
     """Busca el archivo de escudo para un rival, tolerando mayúsculas/minúsculas y extensión."""
@@ -187,20 +200,24 @@ else:
     fecha_next = int(partido["fecha"])
     icono = "🏠" if condicion == "Local" else "✈️"
     color_badge = "#22C55E" if condicion == "Local" else "#60A5FA"
-    escudo_next = buscar_escudo(rival_next)
+
+    escudo_estrella_b64 = escudo_a_base64(ESCUDO_LOCAL)
+    escudo_rival_b64 = escudo_a_base64(buscar_escudo(rival_next))
+
+    img_estrella = f"<img src='{escudo_estrella_b64}' style='width:56px; height:56px; object-fit:contain; border-radius:8px;' />" if escudo_estrella_b64 else "<div style='width:56px; height:56px;'></div>"
+    img_rival = f"<img src='{escudo_rival_b64}' style='width:56px; height:56px; object-fit:contain; border-radius:8px;' />" if escudo_rival_b64 else "<div style='width:56px; height:56px;'></div>"
 
     col_match, col_info = st.columns([1.4, 1])
     with col_match:
-        st.markdown(f"<div style='background:#111827; border-radius:14px; padding:26px; min-height:180px; border:1px solid rgba(255,255,255,.04); box-shadow: 0 10px 28px rgba(0,0,0,.28);'><div style='color:#6B7280; text-transform:uppercase; letter-spacing:2px; font-size:.72rem; margin-bottom:10px;'>Fecha {fecha_next}</div>", unsafe_allow_html=True)
-
-        col_escudo, col_texto = st.columns([1, 4])
-        with col_escudo:
-            if escudo_next:
-                st.image(escudo_next, width=64)
-        with col_texto:
-            st.markdown(f"<div style='font-size:2rem; font-weight:800; color:#F9FAFB; padding-top:6px;'>{icono} vs <span style='color:#E23E3E'>{rival_next}</span></div>", unsafe_allow_html=True)
-
-        st.markdown(f"<div style='margin-top:18px;'><span style='background:{color_badge}20; color:{color_badge}; padding:8px 14px; border-radius:10px; font-size:.82rem; font-weight:700;'>{condicion}</span></div></div>", unsafe_allow_html=True)
+        st.markdown(f"""<div style='background:#111827; border-radius:14px; padding:26px; min-height:180px; border:1px solid rgba(255,255,255,.04); box-shadow: 0 10px 28px rgba(0,0,0,.28);'>
+            <div style='color:#6B7280; text-transform:uppercase; letter-spacing:2px; font-size:.72rem; margin-bottom:16px;'>Fecha {fecha_next}</div>
+            <div style='display:flex; align-items:center; gap:18px;'>
+                {img_estrella}
+                <div style='font-size:1.7rem; font-weight:800; color:#F9FAFB;'>{icono} vs <span style='color:#E23E3E'>{rival_next}</span></div>
+                {img_rival}
+            </div>
+            <div style='margin-top:18px;'><span style='background:{color_badge}20; color:{color_badge}; padding:8px 14px; border-radius:10px; font-size:.82rem; font-weight:700;'>{condicion}</span></div>
+        </div>""", unsafe_allow_html=True)
 
     with col_info:
         st.markdown("<div style='background:#111827; border-radius:14px; padding:22px; min-height:180px; border:1px solid rgba(255,255,255,.04); box-shadow: 0 10px 28px rgba(0,0,0,.28);'><div style='color:#6B7280; text-transform:uppercase; letter-spacing:2px; font-size:.72rem; margin-bottom:16px;'>Atención previa</div><div style='color:#D1D5DB; line-height:1.8; font-size:.88rem;'>• Confirmar disponibilidad<br>• Preparar video rival<br>• Revisar tendencia reciente</div></div>", unsafe_allow_html=True)
@@ -272,13 +289,12 @@ else:
     jugadores_num = df_ultimo["Player"].nunique()
     ratio = round(pases / perdidas, 1) if perdidas > 0 else "—"
 
-    escudo_last = buscar_escudo(rival_last)
-    col_e, col_r = st.columns([1, 8])
-    with col_e:
-        if escudo_last:
-            st.image(escudo_last, width=48)
-    with col_r:
-        st.markdown(f"<div style='color:#9CA3AF; padding-top:8px; font-size:.9rem;'>Rival analizado: <span style='color:#F9FAFB; font-weight:700'>{rival_last}</span></div>", unsafe_allow_html=True)
+    escudo_last_b64 = escudo_a_base64(buscar_escudo(rival_last))
+    img_last = f"<img src='{escudo_last_b64}' style='width:40px; height:40px; object-fit:contain; border-radius:6px;' />" if escudo_last_b64 else ""
+    st.markdown(f"""<div style='display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;'>
+        <div style='color:#9CA3AF; font-size:.9rem;'>Rival analizado: <span style='color:#F9FAFB; font-weight:700'>{rival_last}</span></div>
+        {img_last}
+    </div>""", unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
