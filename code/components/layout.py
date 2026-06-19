@@ -1,13 +1,29 @@
 # ==========================================
-# Archivo: components/layout.py (con soporte mobile)
+# Archivo: components/layout.py (con soporte mobile + st_yled)
 # ==========================================
 import streamlit as st
 import os
+import st_yled  # ← NUEVO: librería de theming, no usa iframes/React (liviana)
 
 # ==========================
-# CSS
+# THEME (st_yled) — se llama UNA sola vez por render, es solo CSS/config
+# ==========================
+def init_theme():
+    """
+    Inicializa st_yled. Busca .streamlit/st-styled.css si existe (opcional).
+    No agrega componentes React ni iframes -> no impacta performance en mobile.
+    Si más adelante querés un theme predefinido, podés probar:
+        st_yled.init(theme="bauhaus")
+    Por ahora lo dejamos neutro para no pisar tus colores actuales (#E23E3E, etc).
+    """
+    st_yled.init()
+
+# ==========================
+# CSS (tu sistema actual, intacto)
 # ==========================
 def inject_css():
+    init_theme()  # ← se ejecuta antes del CSS propio, no interfiere con él
+
     st.markdown("""
 <style>
 #MainMenu { visibility: hidden; }
