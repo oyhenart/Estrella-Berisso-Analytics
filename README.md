@@ -47,15 +47,16 @@ code/                             # 🔄 Torneo Promocional Amateur 2026
     │   ├── sanciones_lesiones.csv    # Bajas por sanción o lesión
     │   └── videos.csv                # Recortes del juego
     ├── static/
+    │   ├── escudos/                  # Escudos de los equipos que enfrentamos
     │   ├── escudo.png
     │   └── fotos/                    # Fotos de jugadores
     └── pages/
-        ├── 1_Estadisticas.py         # Estadísticas por jugador
-        ├── 2_Mapa_Cancha.py          # Mapa de eventos + heatmap
-        ├── 3_Plantilla.py            # Tarjetas de jugadores
-        ├── 4_Fixture.py              # Fixture y resultados
-        ├── 5_Alertas.py              # Sanciones y lesiones
-        └── 6_Videos.py               # Recortes de videos
+        ├── 1_Plantel_ficha.py         # Estadísticas por jugador
+        ├── 2_Mapa_Cancha.py           # Mapa de eventos + heatmap
+        ├── 4_Fixture.py               # Fixture y resultados
+        ├── 5_Alertas.py               # Sanciones y lesiones
+        ├── 6_Videos.py                # Recortes de videos
+        └── 7_Reporte.py               # Reporte automatizado
 ```
 
 ---
