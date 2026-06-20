@@ -20,7 +20,6 @@ render_sidebar(BASE)
 DATA_PATH      = os.path.join(BASE, "data", "events_clean.csv")
 FIXTURE_PATH   = os.path.join(BASE, "data", "fixture.csv")
 JUGADORES_PATH = os.path.join(BASE, "data", "Jugadores.csv")
-ESCUDO_PATH    = os.path.join(BASE, "static", "escudo.png")
 ESCUDOS_DIR    = os.path.join(BASE, "static", "escudos")
 
 st.markdown("""
@@ -53,6 +52,28 @@ df           = cargar_datos()
 fixture      = cargar_fixture()
 jugadores_df = cargar_jugadores()
 pos_map      = dict(zip(jugadores_df["nombre"], jugadores_df["posicion"]))
+
+# ── Escudos ────────────────────────────────────────────────────────────────
+def buscar_escudo(nombre_rival):
+    """Busca el archivo de escudo tolerando mayúsculas/minúsculas y extensión."""
+    if not nombre_rival or not os.path.isdir(ESCUDOS_DIR):
+        return None
+    candidatos = [
+        f"{nombre_rival}.png",
+        f"{nombre_rival}.jpg",
+        f"{nombre_rival}.jpeg",
+        f"{nombre_rival}.webp",
+    ]
+    archivos_existentes = os.listdir(ESCUDOS_DIR)
+    archivos_lower = {a.lower(): a for a in archivos_existentes}
+
+    for candidato in candidatos:
+        ruta = os.path.join(ESCUDOS_DIR, candidato)
+        if os.path.exists(ruta):
+            return ruta
+        if candidato.lower() in archivos_lower:
+            return os.path.join(ESCUDOS_DIR, archivos_lower[candidato.lower()])
+    return None
 
 # ── Selector de partido ───────────────────────────────────────────────────────
 fechas    = sorted(df["fecha"].unique().tolist(), reverse=True)
@@ -451,9 +472,10 @@ def generar_imagen(df_p, rival, condicion, resultado, num_fecha, fixture_row):
     ratio      = round(pases_t / perdidas_t, 1) if perdidas_t > 0 else "—"
 
     # 1. Encabezado — escudo propio
-    if os.path.exists(ESCUDO_PATH):
+    escudo_local_path = buscar_escudo("Local")
+    if escudo_local_path:
         try:
-            img = PILImage.open(ESCUDO_PATH)
+            img = PILImage.open(escudo_local_path).convert("RGBA")
             logo_ax = fig.add_axes([0.05, 0.93, 0.05, 0.035])
             logo_ax.imshow(img)
             logo_ax.set_aspect("equal")
@@ -461,11 +483,11 @@ def generar_imagen(df_p, rival, condicion, resultado, num_fecha, fixture_row):
         except Exception:
             pass
 
-    # ── CAMBIO 3: escudo del rival ──
-    escudo_rival_path = os.path.join(ESCUDOS_DIR, f"{rival}.png")
-    if os.path.exists(escudo_rival_path):
+    # Escudo del rival
+    escudo_rival_path = buscar_escudo(rival)
+    if escudo_rival_path:
         try:
-            img_rival = PILImage.open(escudo_rival_path)
+            img_rival = PILImage.open(escudo_rival_path).convert("RGBA")
             logo_rival_ax = fig.add_axes([0.90, 0.93, 0.05, 0.035])
             logo_rival_ax.imshow(img_rival)
             logo_rival_ax.set_aspect("equal")
