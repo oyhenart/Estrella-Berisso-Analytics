@@ -290,7 +290,7 @@ else:
 
     escudo_last_b64 = escudo_a_base64(buscar_escudo(rival_last))
     img_last = f"<img src='{escudo_last_b64}' style='width:40px; height:40px; object-fit:contain; border-radius:6px;' />" if escudo_last_b64 else ""
-    st.markdown(f"""<div style='display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;'>
+    st.markdown(f"""<div style='display:flex; align-items:center; justify-content:flex-start; gap:10px; margin-bottom:18px;'>
         <div style='color:#9CA3AF; font-size:.9rem;'>Rival analizado: <span style='color:#F9FAFB; font-weight:700'>{rival_last}</span></div>
         {img_last}
     </div>""", unsafe_allow_html=True)
