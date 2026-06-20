@@ -48,7 +48,6 @@ code/                             # 🔄 Torneo Promocional Amateur 2026
     │   └── videos.csv                # Recortes del juego
     ├── static/
     │   ├── escudos/                  # Escudos de los equipos que enfrentamos
-    │   ├── escudo.png
     │   └── fotos/                    # Fotos de jugadores
     └── pages/
         ├── 1_Plantel_ficha.py         # Estadísticas por jugador
