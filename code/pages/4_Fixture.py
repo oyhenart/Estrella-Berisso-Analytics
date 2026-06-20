@@ -29,75 +29,7 @@ render_header(
     "Centro de planificación táctica"
 )
 
-# =========================
-# DATOS SIMULADOS DE RIVALES
-# =========================
-
-rivales_data = {
-
-    "Everton": {
-
-        "sistema": "1-4-4-2",
-
-        "forma": "alta",
-
-        "ataque": [
-            "Juego directo sobre delantero referencia",
-            "Centros tempranos desde banda derecha",
-            "Segunda jugada tras pelotazo"
-        ],
-
-        "debilidades": [
-            "Espacios detrás de los laterales",
-            "Mal repliegue tras pérdida",
-            "Problemas defendiendo cambios de orientación"
-        ],
-
-        "alertas_abp": {
-            "lanzador": "N°10 - Pierna derecha",
-            "rematadores": [
-                "N°2",
-                "N°9",
-                "N°6"
-            ]
-        },
-
-        "videos": [
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        ]
-    },
-
-    "CRIBA": {
-
-        "sistema": "1-4-3-3",
-
-        "forma": "media",
-
-        "ataque": [
-            "Asociaciones interiores",
-            "Extremos muy profundos",
-            "Laterales proyectados"
-        ],
-
-        "debilidades": [
-            "Transiciones defensivas lentas",
-            "Central izquierdo vulnerable en velocidad"
-        ],
-
-        "alertas_abp": {
-            "lanzador": "N°8",
-            "rematadores": [
-                "N°4",
-                "N°9"
-            ]
-        },
-
-        "videos": [
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        ]
-    }
-}
-
+ESCUDOS_DIR = os.path.join(BASE, "static", "escudos")
 
 # =========================
 # FUNCIONES
@@ -114,15 +46,20 @@ def cargar_fixture():
     )
 
 
-def color_forma(forma):
-
-    if forma == "alta":
-        return "#16a34a"
-
-    elif forma == "media":
-        return "#f59e0b"
-
-    return "#dc2626"
+def buscar_escudo(nombre):
+    """Busca el escudo de un equipo tolerando mayúsculas/minúsculas y extensión."""
+    if not nombre or not os.path.isdir(ESCUDOS_DIR):
+        return None
+    candidatos = [f"{nombre}.png", f"{nombre}.jpg", f"{nombre}.jpeg", f"{nombre}.webp"]
+    archivos_existentes = os.listdir(ESCUDOS_DIR)
+    archivos_lower = {a.lower(): a for a in archivos_existentes}
+    for candidato in candidatos:
+        ruta = os.path.join(ESCUDOS_DIR, candidato)
+        if os.path.exists(ruta):
+            return ruta
+        if candidato.lower() in archivos_lower:
+            return os.path.join(ESCUDOS_DIR, archivos_lower[candidato.lower()])
+    return None
 
 
 # =========================
@@ -239,50 +176,52 @@ if proximo is not None:
 
     rival_proximo = proximo["rival"]
 
-    info_rival = rivales_data.get(
-        rival_proximo,
-        None
-    )
-
-    color = "#6b7280"
-
-    if info_rival:
-        color = color_forma(
-            info_rival["forma"]
-        )
-
     condicion = (
         "🏠 Local"
         if proximo["condicion"] == "Local"
         else "✈️ Visitante"
     )
 
-    st.markdown(
-        f"""
-        <div style="
-            background:{color};
-            padding:25px;
-            border-radius:15px;
-            color:white;
-            text-align:center;
-            margin-bottom:20px;
-        ">
-            <h2>
-                Estrella de Berisso vs {rival_proximo}
-            </h2>
-            <h4>
-                Fecha {int(proximo['fecha'])}
-            </h4>
-            <h4>
-                {condicion}
-            </h4>
-        </div>
-        """,
-        unsafe_allow_html=True
+    escudo_rival_proximo = buscar_escudo(rival_proximo)
+
+    col_escudo, col_card = st.columns([1, 6])
+
+    with col_escudo:
+        if escudo_rival_proximo:
+            st.image(escudo_rival_proximo, width=90)
+
+    with col_card:
+        st.markdown(
+            f"""
+            <div style="
+                background:#1F2937;
+                padding:25px;
+                border-radius:15px;
+                color:white;
+                text-align:center;
+            ">
+                <h2>
+                    Estrella de Berisso vs {rival_proximo}
+                </h2>
+                <h4>
+                    Fecha {int(proximo['fecha'])}
+                </h4>
+                <h4>
+                    {condicion}
+                </h4>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+else:
+
+    st.info(
+        "No hay partidos pendientes."
     )
 
 # =========================
-# ANALISIS DEL RIVAL
+# HISTORIAL VS EL RIVAL
 # =========================
 
 st.divider()
@@ -292,79 +231,82 @@ if proximo is not None:
     rival_actual = proximo["rival"]
 
     st.subheader(
-        f"🧠 Informe de {rival_actual}"
+        f"📊 Historial vs {rival_actual}"
     )
 
-    if rival_actual in rivales_data:
+    enfrentamientos = df[
+        (df["rival"] == rival_actual) &
+        (df["estado"] == "Jugado")
+    ]
 
-        rival = rivales_data[
-            rival_actual
-        ]
+    if enfrentamientos.empty:
+
+        st.info(
+            f"Todavía no hay partidos jugados contra {rival_actual}. "
+            "Va a ser el primer enfrentamiento registrado."
+        )
 
     else:
 
-        st.warning(
-            f"No existe un informe cargado para {rival_actual}"
+        g_h = len(
+            enfrentamientos[
+                enfrentamientos["goles_favor"] >
+                enfrentamientos["goles_contra"]
+            ]
         )
 
-        st.info(
-            "Cargar sistema táctico, patrones, ABP y videos para este rival."
+        e_h = len(
+            enfrentamientos[
+                enfrentamientos["goles_favor"] ==
+                enfrentamientos["goles_contra"]
+            ]
         )
 
-        st.stop()
+        p_h = len(
+            enfrentamientos[
+                enfrentamientos["goles_favor"] <
+                enfrentamientos["goles_contra"]
+            ]
+        )
+
+        gf_h = int(enfrentamientos["goles_favor"].sum())
+        gc_h = int(enfrentamientos["goles_contra"].sum())
+
+        ch1, ch2, ch3, ch4 = st.columns(4)
+
+        ch1.metric("Enfrentamientos", len(enfrentamientos))
+        ch2.metric("Récord (G-E-P)", f"{g_h}-{e_h}-{p_h}")
+        ch3.metric("Goles a favor", gf_h)
+        ch4.metric("Goles en contra", gc_h)
+
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+        for _, row in enfrentamientos.sort_values("fecha").iterrows():
+
+            gf_p = int(row["goles_favor"])
+            gc_p = int(row["goles_contra"])
+            resultado = f"{gf_p} - {gc_p}"
+
+            colf1, colf2, colf3 = st.columns([1, 3, 2])
+
+            with colf1:
+                st.markdown(f"Fecha {int(row['fecha'])}")
+
+            with colf2:
+                cond_p = "🏠 Local" if row["condicion"] == "Local" else "✈️ Visitante"
+                st.markdown(f"{cond_p}")
+
+            with colf3:
+                if gf_p > gc_p:
+                    st.success(resultado)
+                elif gf_p == gc_p:
+                    st.warning(resultado)
+                else:
+                    st.error(resultado)
 
 else:
 
-    st.info(
-        "No hay partidos pendientes."
-    )
-
     st.stop()
-
-# =========================
-# ABP
-# =========================
-
-st.divider()
-
-st.subheader(
-    "🎯 Alertas Balón Parado"
-)
-
-abp = rival["alertas_abp"]
-
-col1, col2 = st.columns(2)
-
-with col1:
-
-    st.info(
-        f"Lanzador Principal: {abp['lanzador']}"
-    )
-
-with col2:
-
-    st.warning(
-        "Rematadores Principales"
-    )
-
-    for jugador in abp["rematadores"]:
-        st.markdown(
-            f"- {jugador}"
-        )
-
-# =========================
-# REPOSITORIO DE VIDEO
-# =========================
-
-st.divider()
-
-st.subheader(
-    "🎥 Repositorio de Video"
-)
-
-for video in rival["videos"]:
-
-    st.video(video)
 
 # =========================
 # PLAN DE PARTIDO
