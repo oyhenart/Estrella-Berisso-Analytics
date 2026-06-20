@@ -68,7 +68,6 @@ def racha_visual(df):
 # 4.1) ESCUDOS
 # ==========================
 ESCUDOS_PATH = os.path.join(BASE, "static", "escudos")
-ESCUDO_LOCAL = os.path.join(ESCUDOS_PATH, "Local.jpg")
 
 import base64
 
@@ -201,7 +200,7 @@ else:
     icono = "🏠" if condicion == "Local" else "✈️"
     color_badge = "#22C55E" if condicion == "Local" else "#60A5FA"
 
-    escudo_estrella_b64 = escudo_a_base64(ESCUDO_LOCAL)
+    escudo_estrella_b64 = escudo_a_base64(buscar_escudo("Local"))
     escudo_rival_b64 = escudo_a_base64(buscar_escudo(rival_next))
 
     img_estrella = f"<img src='{escudo_estrella_b64}' style='width:56px; height:56px; object-fit:contain; border-radius:8px;' />" if escudo_estrella_b64 else "<div style='width:56px; height:56px;'></div>"
