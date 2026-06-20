@@ -412,107 +412,128 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 # ══════════════════════════════════════════════════════════════════════════════
 COLS_DESKTOP = 4   # cuántas columnas usa st.columns en desktop
 
-for i in range(0, len(df_filtrado), COLS_DESKTOP):
-    bloque = df_filtrado.iloc[i : i + COLS_DESKTOP]
-    cols   = st.columns(len(bloque))
+ORDEN_POSICIONES = ["Arquero", "Defensor", "Mediocampista", "Delantero"]
 
-    for j, (_, row) in enumerate(bloque.iterrows()):
-        nombre   = row["nombre"]
-        posicion = row["posicion"]
-        color    = COLOR_POS.get(posicion, "#9CA3AF")
-        icono, estado_txt, badge_cls = estado_jugador(nombre, alertas)
-        foto_path = os.path.join(FOTOS_DIR, str(row.get("fotos", "")))
+# Agrupar jugadores filtrados por posición, respetando el orden táctico.
+# Las posiciones que no estén en ORDEN_POSICIONES (por si hay un valor raro
+# en el CSV) se agregan al final, en orden alfabético, para no perder jugadores.
+posiciones_presentes = df_filtrado["posicion"].dropna().unique().tolist()
+posiciones_extra = sorted(p for p in posiciones_presentes if p not in ORDEN_POSICIONES)
+orden_final = [p for p in ORDEN_POSICIONES if p in posiciones_presentes] + posiciones_extra
 
-        with cols[j]:
-            # ── Cromo en HTML (sin st.image para no relentizar) ──
-            img_html = foto_html(foto_path)
-            st.markdown(f"""
-            <div class='cromo'>
-                {img_html}
-                <div class='cromo-numero'>#{int(row['camiseta'])}</div>
-                <div class='cromo-nombre'>{nombre}</div>
-                <div class='cromo-pos' style='color:{color}'>{posicion}</div>
-                <span class='badge {badge_cls}'>{icono} {estado_txt}</span>
-            </div>
-            """, unsafe_allow_html=True)
+for pos_grupo in orden_final:
+    grupo_df = df_filtrado[df_filtrado["posicion"] == pos_grupo].reset_index(drop=True)
+    if grupo_df.empty:
+        continue
 
-            # ── Ficha expandible inline (no hace rerun de toda la página) ──
-            with st.expander("Ver ficha", expanded=False):
-                _stats  = stats_jugador(nombre, eventos)
-                _metr   = METRICAS_POS.get(posicion, ["pase", "recuperacion", "remate"])
+    color_grupo = COLOR_POS.get(pos_grupo, "#9CA3AF")
+    st.markdown(f"""
+    <div class='seccion-titulo' style='margin-top:18px;color:{color_grupo}'>
+        {pos_grupo} <span style='color:#4B5563'>({len(grupo_df)})</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-                # Cabecera de ficha
+    for i in range(0, len(grupo_df), COLS_DESKTOP):
+        bloque = grupo_df.iloc[i : i + COLS_DESKTOP]
+        cols   = st.columns(COLS_DESKTOP)
+
+        for j, (_, row) in enumerate(bloque.iterrows()):
+            nombre   = row["nombre"]
+            posicion = row["posicion"]
+            color    = COLOR_POS.get(posicion, "#9CA3AF")
+            icono, estado_txt, badge_cls = estado_jugador(nombre, alertas)
+            foto_path = os.path.join(FOTOS_DIR, str(row.get("fotos", "")))
+
+            with cols[j]:
+                # ── Cromo en HTML (sin st.image para no relentizar) ──
+                img_html = foto_html(foto_path)
                 st.markdown(f"""
-                <div style='--accent:{color}' class='ficha-header'>
-                    <div style='font-size:1.1em;font-weight:800;color:#F9FAFB;margin-bottom:10px'>
-                        #{int(row['camiseta'])} {nombre}
-                    </div>
-                    <div style='display:flex;gap:20px;flex-wrap:wrap'>
-                        <div><div class='ficha-label'>Posición</div>
-                             <div class='ficha-valor' style='color:{color}'>{posicion}</div></div>
-                        <div><div class='ficha-label'>Edad</div>
-                             <div class='ficha-valor'>{row.get("edad","—")}</div></div>
-                        <div><div class='ficha-label'>Partidos</div>
-                             <div class='ficha-valor'>{_stats["partidos"]}</div></div>
-                        <div><div class='ficha-label'>Minutos</div>
-                             <div class='ficha-valor'>{_stats["minutos"]}'</div></div>
-                        <div><div class='ficha-label'>Estado</div>
-                             <span class='badge {badge_cls}'>{icono} {estado_txt}</span></div>
-                    </div>
+                <div class='cromo'>
+                    {img_html}
+                    <div class='cromo-numero'>#{int(row['camiseta'])}</div>
+                    <div class='cromo-nombre'>{nombre}</div>
+                    <div class='cromo-pos' style='color:{color}'>{posicion}</div>
+                    <span class='badge {badge_cls}'>{icono} {estado_txt}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Métricas clave (siempre visibles, incluso en mobile)
-                st.markdown("<div class='seccion-titulo'>Métricas clave</div>",
-                            unsafe_allow_html=True)
-                mc = st.columns(len(_metr))
-                for k, m in enumerate(_metr):
-                    mc[k].metric(LABEL_METRICAS.get(m, m), _stats.get(m, 0))
+                # ── Ficha expandible inline (no hace rerun de toda la página) ──
+                with st.expander("Ver ficha", expanded=False):
+                    _stats  = stats_jugador(nombre, eventos)
+                    _metr   = METRICAS_POS.get(posicion, ["pase", "recuperacion", "remate"])
 
-                # Radar solo en desktop (oculto via CSS en mobile)
-                if not eventos.empty:
-                    st.markdown("<div class='radar-desktop'>", unsafe_allow_html=True)
-                    st.markdown("<div class='seccion-titulo'>Perfil de rendimiento</div>",
+                    # Cabecera de ficha
+                    st.markdown(f"""
+                    <div style='--accent:{color}' class='ficha-header'>
+                        <div style='font-size:1.1em;font-weight:800;color:#F9FAFB;margin-bottom:10px'>
+                            #{int(row['camiseta'])} {nombre}
+                        </div>
+                        <div style='display:flex;gap:20px;flex-wrap:wrap'>
+                            <div><div class='ficha-label'>Posición</div>
+                                 <div class='ficha-valor' style='color:{color}'>{posicion}</div></div>
+                            <div><div class='ficha-label'>Edad</div>
+                                 <div class='ficha-valor'>{row.get("edad","—")}</div></div>
+                            <div><div class='ficha-label'>Partidos</div>
+                                 <div class='ficha-valor'>{_stats["partidos"]}</div></div>
+                            <div><div class='ficha-label'>Minutos</div>
+                                 <div class='ficha-valor'>{_stats["minutos"]}'</div></div>
+                            <div><div class='ficha-label'>Estado</div>
+                                 <span class='badge {badge_cls}'>{icono} {estado_txt}</span></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # Métricas clave (siempre visibles, incluso en mobile)
+                    st.markdown("<div class='seccion-titulo'>Métricas clave</div>",
                                 unsafe_allow_html=True)
-                    fig_r = radar_jugador(nombre, posicion, eventos, color)
-                    st.plotly_chart(fig_r, use_container_width=True,
-                                    key=f"radar_{nombre}_{i}_{j}")
-                    st.markdown("</div>", unsafe_allow_html=True)
+                    mc = st.columns(len(_metr))
+                    for k, m in enumerate(_metr):
+                        mc[k].metric(LABEL_METRICAS.get(m, m), _stats.get(m, 0))
 
-                # Observaciones
-                st.markdown("<div class='seccion-titulo' style='margin-top:14px'>Observaciones</div>",
-                            unsafe_allow_html=True)
-                if "obs_cache" not in st.session_state:
-                    st.session_state.obs_cache = {}
-                obs_val = st.session_state.obs_cache.get(nombre, "")
-                nueva   = st.text_area(
-                    "Notas",
-                    value=obs_val,
-                    height=110,
-                    placeholder="Notas tácticas, comportamientos...",
-                    key=f"obs_{nombre}_{i}_{j}",
-                    label_visibility="collapsed",
-                )
-                if st.button("💾 Guardar", key=f"save_{nombre}_{i}_{j}"):
-                    st.session_state.obs_cache[nombre] = nueva
-                    st.success("Guardado.")
+                    # Radar solo en desktop (oculto via CSS en mobile)
+                    if not eventos.empty:
+                        st.markdown("<div class='radar-desktop'>", unsafe_allow_html=True)
+                        st.markdown("<div class='seccion-titulo'>Perfil de rendimiento</div>",
+                                    unsafe_allow_html=True)
+                        fig_r = radar_jugador(nombre, posicion, eventos, color)
+                        st.plotly_chart(fig_r, use_container_width=True,
+                                        key=f"radar_{nombre}_{pos_grupo}_{i}_{j}")
+                        st.markdown("</div>", unsafe_allow_html=True)
 
-                # Detalle por partido
-                if not eventos.empty:
-                    j_ev = eventos[eventos["Player"].str.lower() == nombre.lower()]
-                    if not j_ev.empty:
-                        st.markdown(
-                            "<div class='seccion-titulo' style='margin-top:14px'>Detalle por partido</div>",
-                            unsafe_allow_html=True)
-                        rows_t = []
-                        for fecha in sorted(j_ev["fecha"].unique()):
-                            jf   = j_ev[j_ev["fecha"] == fecha]
-                            fila = {"Fecha": int(fecha)}
-                            for m in _metr:
-                                fila[LABEL_METRICAS.get(m, m)] = int(len(jf[jf["Event"] == m]))
-                            rows_t.append(fila)
-                        st.dataframe(pd.DataFrame(rows_t),
-                                     hide_index=True, use_container_width=True)
+                    # Observaciones
+                    st.markdown("<div class='seccion-titulo' style='margin-top:14px'>Observaciones</div>",
+                                unsafe_allow_html=True)
+                    if "obs_cache" not in st.session_state:
+                        st.session_state.obs_cache = {}
+                    obs_val = st.session_state.obs_cache.get(nombre, "")
+                    nueva   = st.text_area(
+                        "Notas",
+                        value=obs_val,
+                        height=110,
+                        placeholder="Notas tácticas, comportamientos...",
+                        key=f"obs_{nombre}_{pos_grupo}_{i}_{j}",
+                        label_visibility="collapsed",
+                    )
+                    if st.button("💾 Guardar", key=f"save_{nombre}_{pos_grupo}_{i}_{j}"):
+                        st.session_state.obs_cache[nombre] = nueva
+                        st.success("Guardado.")
+
+                    # Detalle por partido
+                    if not eventos.empty:
+                        j_ev = eventos[eventos["Player"].str.lower() == nombre.lower()]
+                        if not j_ev.empty:
+                            st.markdown(
+                                "<div class='seccion-titulo' style='margin-top:14px'>Detalle por partido</div>",
+                                unsafe_allow_html=True)
+                            rows_t = []
+                            for fecha in sorted(j_ev["fecha"].unique()):
+                                jf   = j_ev[j_ev["fecha"] == fecha]
+                                fila = {"Fecha": int(fecha)}
+                                for m in _metr:
+                                    fila[LABEL_METRICAS.get(m, m)] = int(len(jf[jf["Event"] == m]))
+                                rows_t.append(fila)
+                            st.dataframe(pd.DataFrame(rows_t),
+                                         hide_index=True, use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # VISTA COLECTIVA
