@@ -138,9 +138,25 @@ def render_mobile_nav():
 # ==========================
 # SIDEBAR
 # ==========================
+def buscar_escudo_local(base_path):
+    """Busca el escudo propio (Local.*) tolerando mayúsculas/minúsculas y extensión."""
+    escudos_dir = os.path.join(base_path, "static", "escudos")
+    if not os.path.isdir(escudos_dir):
+        return None
+    candidatos = ["Local.png", "Local.jpg", "Local.jpeg", "Local.webp"]
+    archivos_existentes = os.listdir(escudos_dir)
+    archivos_lower = {a.lower(): a for a in archivos_existentes}
+    for candidato in candidatos:
+        ruta = os.path.join(escudos_dir, candidato)
+        if os.path.exists(ruta):
+            return ruta
+        if candidato.lower() in archivos_lower:
+            return os.path.join(escudos_dir, archivos_lower[candidato.lower()])
+    return None
+
 def render_sidebar(base_path):
-    escudo = os.path.join(base_path, "static", "escudo.png")
-    if os.path.exists(escudo):
+    escudo = buscar_escudo_local(base_path)
+    if escudo:
         st.sidebar.image(escudo, width=80)
     st.sidebar.markdown("""
 <div style="margin-bottom: 20px;">
