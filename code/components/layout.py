@@ -170,14 +170,14 @@ def render_sidebar(base_path):
 </div>
 """, unsafe_allow_html=True)
     paginas = [
-        (os.path.join(base_path, "app.py"),                      "⚽ Inicio"),
-        (os.path.join(base_path, "pages", "1_Plantel_ficha.py"), "👥 Plantel"),
-        (os.path.join(base_path, "pages", "2_Mapa_cancha.py"),   "🗺️ Campo"),
-        (os.path.join(base_path, "pages", "3_Plantilla.py"),     "📋 Plantilla"),
-        (os.path.join(base_path, "pages", "4_Fixture.py"),       "🗓️ Fixture"),
-        (os.path.join(base_path, "pages", "5_Alertas.py"),       "🚨 Alertas"),
-        (os.path.join(base_path, "pages", "6_Videos.py"),        "🎬 Videos"),
-        (os.path.join(base_path, "pages", "7_Reporte.py"),       "📄 Reporte"),
+        (os.path.join(base_path, "app.py"),                          "Inicio"),
+        (os.path.join(base_path, "pages", "1_Plantel_ficha.py"),     "Plantel"),
+        (os.path.join(base_path, "pages", "2_Mapa_cancha.py"),       "Campo"),
+        (os.path.join(base_path, "pages", "3_Rendimiento_fisico.py"),"Físico"),
+        (os.path.join(base_path, "pages", "4_Fixture.py"),           "Fixture"),
+        (os.path.join(base_path, "pages", "5_Alertas.py"),           "Alertas"),
+        (os.path.join(base_path, "pages", "6_Videos.py"),            "Videos"),
+        (os.path.join(base_path, "pages", "7_Reporte.py"),           "Reporte"),
     ]
     for ruta_abs, nombre in paginas:
         if os.path.exists(ruta_abs):
