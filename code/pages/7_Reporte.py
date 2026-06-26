@@ -186,6 +186,8 @@ def grafico_pases_ultimo_tercio(df_p, ax):
         if any(pd.isna(v) for v in [orig_x1,orig_y1,orig_x2,orig_y2]):
             continue
         if orig_x1 < 66.6: continue
+        x2_f, y2_f = float(orig_x2), float(orig_y2)
+        if x2_f < 66.6: continue   # destino también debe estar en el último tercio
         x1,y1 = orig_y1,orig_x1
         x2,y2 = float(orig_y2),float(orig_x2)
         complete = pase_completo(df_p,idx,float(orig_x2),float(orig_y2))
