@@ -253,11 +253,24 @@ def calcular_minutos(nombre: str, eventos: pd.DataFrame) -> int:
         return 0
     total = 0
     for f in j["fecha"].unique():
-        ep = eventos[eventos["fecha"] == f]
         jp = j[j["fecha"] == f]
-        final   = int(ep["Mins"].max())
-        primero = int(jp["Mins"].min())
-        mins = final if primero <= 15 else max(1, final - primero + 1)
+        ep = eventos[eventos["fecha"] == f]
+        
+        # Último minuto real del jugador, ajustado por mitad
+        offset = ep[ep["mitad"] == 1]["Mins"].max() if not ep[ep["mitad"] == 1].empty else 45
+        if pd.isna(offset): offset = 45
+        
+        def mins_reales(row):
+            return row["Mins"] + offset if row["mitad"] == 2 else row["Mins"]
+        
+        jp = jp.copy()
+        jp["Mins_real"] = jp.apply(mins_reales, axis=1)
+        
+        primero = jp["Mins_real"].min()
+        ultimo  = jp["Mins_real"].max()
+        
+        # Si jugó desde el arranque, minutos = hasta cuando aparece su último evento
+        mins = ultimo if primero <= 15 else max(1, ultimo - primero + 1)
         total += mins
     return total
 
