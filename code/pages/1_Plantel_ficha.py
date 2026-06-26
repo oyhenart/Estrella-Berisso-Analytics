@@ -244,6 +244,31 @@ def estado_jugador(nombre: str, alertas: pd.DataFrame) -> tuple:
         return "🟨", "En riesgo", "badge-amari"
     return "✅", "Disponible", "badge-verde"
 
+def mins_reales_partido(ep: pd.DataFrame) -> pd.DataFrame:
+    """
+    LongoMatch es inconsistente: a veces la mitad 2 resetea desde 0,
+    otras el crono continúa desde 45+. Detectamos cuál es el caso
+    comparando el mínimo de Mins en mitad 2 contra un umbral de 10.
+    """
+    m1 = ep[ep["mitad"] == 1]
+    m2 = ep[ep["mitad"] == 2]
+    if m1.empty or m2.empty:
+        ep = ep.copy()
+        ep["Mins_real"] = ep["Mins"]
+        return ep
+    m1_max  = m1["Mins"].max()
+    m2_min  = m2["Mins"].min()
+    resetea = m2_min < 10   # mitad 2 empieza desde ~0 → LongoMatch reseteó el crono
+    ep = ep.copy()
+    if resetea:
+        offset = m1_max if not pd.isna(m1_max) else 45
+        ep["Mins_real"] = ep.apply(
+            lambda r: r["Mins"] + offset if r["mitad"] == 2 else r["Mins"], axis=1
+        )
+    else:
+        ep["Mins_real"] = ep["Mins"]   # ya son continuos, no tocar
+    return ep
+
 
 def calcular_minutos(nombre: str, eventos: pd.DataFrame) -> int:
     if eventos.empty:
@@ -253,26 +278,15 @@ def calcular_minutos(nombre: str, eventos: pd.DataFrame) -> int:
         return 0
     total = 0
     for f in j["fecha"].unique():
-        jp = j[j["fecha"] == f]
-        ep = eventos[eventos["fecha"] == f]
-        
-        # Último minuto real del jugador, ajustado por mitad
-        offset = ep[ep["mitad"] == 1]["Mins"].max() if not ep[ep["mitad"] == 1].empty else 45
-        if pd.isna(offset): offset = 45
-        
-        def mins_reales(row):
-            return row["Mins"] + offset if row["mitad"] == 2 else row["Mins"]
-        
-        jp = jp.copy()
-        jp["Mins_real"] = jp.apply(mins_reales, axis=1)
-        
-        primero = jp["Mins_real"].min()
-        ultimo  = jp["Mins_real"].max()
-        
-        # Si jugó desde el arranque, minutos = hasta cuando aparece su último evento
-        mins = ultimo if primero <= 15 else max(1, ultimo - primero + 1)
-        total += mins
-    return total
+        ep_fixed = mins_reales_partido(eventos[eventos["fecha"] == f])
+        jp       = ep_fixed[ep_fixed["Player"].str.lower() == nombre.lower()]
+        primero  = jp["Mins_real"].min()
+        ultimo   = jp["Mins_real"].max()
+        # Si entró de arranque (primero <= 15), los minutos son hasta su último evento.
+        # Si entró desde el banco, son los minutos que estuvo en cancha.
+        mins     = ultimo if primero <= 15 else max(1, ultimo - primero + 1)
+        total   += mins
+    return int(total)
 
 
 def stats_jugador(nombre: str, eventos: pd.DataFrame) -> dict:
