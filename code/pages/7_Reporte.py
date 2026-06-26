@@ -142,128 +142,52 @@ def draw_half_pitch_horizontal_layout(ax):
     ax.add_patch(mpatches.Rectangle((-2, 48), 104, 54, fill=False, edgecolor="#7A6A5E", lw=2, zorder=10))
 
 def pase_completo(df_p, idx, x_dest, y_dest, tolerancia=5, ventana=4):
-
     for j in range(idx + 1, min(idx + ventana + 1, len(df_p))):
-
         sig = df_p.iloc[j]
-
         try:
             x_sig = float(sig["X"])
             y_sig = float(sig["Y"])
         except:
             continue
-
-        distancia = math.sqrt(
-            (x_dest - x_sig) ** 2 +
-            (y_dest - y_sig) ** 2
-        )
-
+        distancia = math.sqrt((x_dest - x_sig) ** 2 + (y_dest - y_sig) ** 2)
         if distancia <= tolerancia:
             return True
-
     return False
 
 
 # ── Gráfico 1: Mapa de pases Último Tercio ────────────────────────────────────
 def grafico_pases_ultimo_tercio(df_p, ax):
     draw_half_pitch_horizontal_layout(ax)
-
-    ax.plot(
-        [-2, 102],
-        [66.6, 66.6],
-        color="#7A6A5E",
-        linestyle=":",
-        linewidth=1.2,
-        zorder=2
-    )
-
+    ax.plot([-2, 102], [66.6, 66.6], color="#7A6A5E", linestyle=":", linewidth=1.2, zorder=2)
     pases = df_p[df_p["Event"] == "pase"].copy()
-
     for col in ["X", "Y", "X2", "Y2"]:
         pases[col] = pd.to_numeric(pases[col], errors="coerce")
-
     completos = 0
     incompletos = 0
-
     for idx, row in pases.iterrows():
-
-        orig_x1 = float(row["X"])
-        orig_y1 = float(row["Y"])
-        orig_x2 = row["X2"]
-        orig_y2 = row["Y2"]
-
-        if (
-            pd.isna(orig_x1)
-            or pd.isna(orig_y1)
-            or pd.isna(orig_x2)
-            or pd.isna(orig_y2)
-        ):
+        orig_x1 = float(row["X"]); orig_y1 = float(row["Y"])
+        orig_x2 = row["X2"]; orig_y2 = row["Y2"]
+        if pd.isna(orig_x1) or pd.isna(orig_y1) or pd.isna(orig_x2) or pd.isna(orig_y2):
             continue
-
         if orig_x1 < 66.6:
             continue
-
         x1, y1 = orig_y1, orig_x1
         x2, y2 = float(orig_y2), float(orig_x2)
-
-        complete = pase_completo(
-            df_p=df_p,
-            idx=idx,
-            x_dest=float(orig_x2),
-            y_dest=float(orig_y2),
-            tolerancia=5,
-            ventana=4
-        )
-
+        complete = pase_completo(df_p=df_p, idx=idx, x_dest=float(orig_x2),
+                                 y_dest=float(orig_y2), tolerancia=5, ventana=4)
         color = "#2E6F40" if complete else "#C93B3B"
         alpha = 0.8 if complete else 0.5
-
-        if complete:
-            completos += 1
-        else:
-            incompletos += 1
-
-        ax.annotate(
-            "",
-            xy=(x2, y2),
-            xytext=(x1, y1),
-            arrowprops=dict(
-                arrowstyle="->",
-                color=color,
-                lw=1.5,
-                alpha=alpha
-            )
-        )
-
-        ax.plot(
-            x1,
-            y1,
-            "o",
-            color=color,
-            markersize=3,
-            alpha=alpha
-        )
-
+        if complete: completos += 1
+        else: incompletos += 1
+        ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
+                    arrowprops=dict(arrowstyle="->", color=color, lw=1.5, alpha=alpha))
+        ax.plot(x1, y1, "o", color=color, markersize=3, alpha=alpha)
     legend = [
-        mpatches.Patch(
-            color="#2E6F40",
-            label=f"Completo ({completos})"
-        ),
-        mpatches.Patch(
-            color="#C93B3B",
-            label=f"Incompleto ({incompletos})"
-        ),
+        mpatches.Patch(color="#2E6F40", label=f"Completo ({completos})"),
+        mpatches.Patch(color="#C93B3B", label=f"Incompleto ({incompletos})"),
     ]
-
-    ax.legend(
-        handles=legend,
-        loc="upper left",
-        framealpha=0.9,
-        facecolor="#FAF7F2",
-        edgecolor="#7A6A5E",
-        labelcolor="#3D2C24",
-        fontsize=8
-    )
+    ax.legend(handles=legend, loc="upper left", framealpha=0.9,
+              facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
 
 # ── Gráfico 2: Heatmap Presión en Campo Rival ─────────────────────────────────
 def grafico_presion_rival(df_p, ax):
@@ -296,14 +220,14 @@ def grafico_actividad(df_p, ax):
     df_p = df_p.copy()
     df_p["Mins"] = pd.to_numeric(df_p["Mins"], errors="coerce")
 
-    # Minuto real de partido: si es mitad 2, sumamos el último minuto de mitad 1
-    primer_tiempo = df_p[df_p["mitad"] == 1]
-    offset = primer_tiempo["Mins"].max() if not primer_tiempo.empty else 45
-    if pd.isna(offset):
-        offset = 45
-
-    df_p["Mins_real"] = df_p["Mins"]
-    df_p.loc[df_p["mitad"] == 2, "Mins_real"] = df_p["Mins"] + offset
+    # FIX: offset fijo en 45 para evitar el hueco entre mitades.
+    # LongoMatch resetea el crono en la segunda mitad (Mins va de 0 a ~50),
+    # así que sumamos 45 fijos para tener continuidad en el eje X (0–95+).
+    OFFSET_HT = 45
+    df_p["Mins_real"] = df_p.apply(
+        lambda r: r["Mins"] + OFFSET_HT if r["mitad"] == 2 else r["Mins"],
+        axis=1
+    )
 
     act = df_p.groupby("Mins_real")["Event"].count()
     bars = ax.bar(act.index.astype(float), act.values, color="#7A6A5E", width=0.8)
@@ -318,11 +242,16 @@ def grafico_actividad(df_p, ax):
                 for bar in bars:
                     if abs(bar.get_x() + bar.get_width()/2 - float(m_min)) < 0.5:
                         bar.set_color("#A83232")
-                ax.text(float(m_min), m_val + 0.3, f"Min {int(float(m_min))}\n{top_ev.title()} ({top_cnt})",
-                        color="#A83232", fontsize=7.5, ha="center", va="bottom", fontweight="bold",
-                        bbox=dict(boxstyle="round,pad=0.2", facecolor="#FAF7F2", edgecolor="#A83232", lw=0.5, alpha=0.9))
+                ax.text(float(m_min), m_val + 0.3,
+                        f"Min {int(float(m_min))}\n{top_ev.title()} ({top_cnt})",
+                        color="#A83232", fontsize=7.5, ha="center", va="bottom",
+                        fontweight="bold",
+                        bbox=dict(boxstyle="round,pad=0.2", facecolor="#FAF7F2",
+                                  edgecolor="#A83232", lw=0.5, alpha=0.9))
 
-    ax.axvline(offset, color="#A83232", linestyle="--", linewidth=1, alpha=0.7, label="HT")
+    # Línea de medio tiempo siempre en 45
+    ax.axvline(OFFSET_HT, color="#A83232", linestyle="--", linewidth=1,
+               alpha=0.7, label="HT")
     ax.set_xlabel("Minuto", color="#3D2C24", fontsize=9, fontfamily="serif")
     ax.set_ylabel("Eventos", color="#3D2C24", fontsize=9, fontfamily="serif")
     ax.tick_params(colors="#3D2C24", labelsize=8)
@@ -331,104 +260,34 @@ def grafico_actividad(df_p, ax):
 
 # ── Gráfico 4: Pases Largos al Último Tercio ──────────────────────────────────
 def grafico_pases_largos(df_p, ax):
-
     draw_pitch(ax)
-
     pases = df_p[df_p["Event"] == "pase"].copy()
-
     for col in ["X", "Y", "X2", "Y2"]:
         pases[col] = pd.to_numeric(pases[col], errors="coerce")
-
-    completos = 0
-    incompletos = 0
-
+    completos = 0; incompletos = 0
     for idx, row in pases.iterrows():
-
-        x1 = float(row["X"])
-        y1 = float(row["Y"])
-        x2 = row["X2"]
-        y2 = row["Y2"]
-
-        if (
-            pd.isna(x1)
-            or pd.isna(y1)
-            or pd.isna(x2)
-            or pd.isna(y2)
-        ):
+        x1 = float(row["X"]); y1 = float(row["Y"])
+        x2 = row["X2"]; y2 = row["Y2"]
+        if pd.isna(x1) or pd.isna(y1) or pd.isna(x2) or pd.isna(y2):
             continue
-
-        x2 = float(x2)
-        y2 = float(y2)
-
-        distancia = math.sqrt(
-            (x2 - x1) ** 2 +
-            (y2 - y1) ** 2
-        )
-
-        if (
-            x1 < 66.6
-            and x2 >= 66.6
-            and distancia >= 30
-        ):
-
-            complete = pase_completo(
-                df_p=df_p,
-                idx=idx,
-                x_dest=x2,
-                y_dest=y2,
-                tolerancia=5,
-                ventana=4
-            )
-
+        x2 = float(x2); y2 = float(y2)
+        distancia = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        if x1 < 66.6 and x2 >= 66.6 and distancia >= 30:
+            complete = pase_completo(df_p=df_p, idx=idx, x_dest=x2, y_dest=y2,
+                                     tolerancia=5, ventana=4)
             color = "#2E6F40" if complete else "#C93B3B"
             alpha = 0.8 if complete else 0.5
-
-            if complete:
-                completos += 1
-            else:
-                incompletos += 1
-
-            ax.annotate(
-                "",
-                xy=(x2, y2),
-                xytext=(x1, y1),
-                arrowprops=dict(
-                    arrowstyle="-|>",
-                    color=color,
-                    lw=1.5,
-                    alpha=alpha
-                )
-            )
-
-            ax.plot(
-                x1,
-                y1,
-                "o",
-                color=color,
-                markersize=4,
-                alpha=alpha
-            )
-
+            if complete: completos += 1
+            else: incompletos += 1
+            ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
+                        arrowprops=dict(arrowstyle="-|>", color=color, lw=1.5, alpha=alpha))
+            ax.plot(x1, y1, "o", color=color, markersize=4, alpha=alpha)
     legend = [
-        mpatches.Patch(
-            color="#2E6F40",
-            label=f"Completo ({completos})"
-        ),
-        mpatches.Patch(
-            color="#C93B3B",
-            label=f"Incompleto ({incompletos})"
-        ),
+        mpatches.Patch(color="#2E6F40", label=f"Completo ({completos})"),
+        mpatches.Patch(color="#C93B3B", label=f"Incompleto ({incompletos})"),
     ]
-
-    ax.legend(
-        handles=legend,
-        loc="upper left",
-        framealpha=0.9,
-        facecolor="#FAF7F2",
-        edgecolor="#7A6A5E",
-        labelcolor="#3D2C24",
-        fontsize=8
-    )
+    ax.legend(handles=legend, loc="upper left", framealpha=0.9,
+              facecolor="#FAF7F2", edgecolor="#7A6A5E", labelcolor="#3D2C24", fontsize=8)
 
 # ── Gráfico 5: Mapa de Remates ────────────────────────────────────────────────
 def grafico_remates(df_p, ax):
@@ -466,7 +325,6 @@ def generar_imagen(df_p, rival, condicion, resultado, num_fecha, fixture_row):
     recup_t    = len(df_p[df_p["Event"] == "recuperacion"])
     perdidas_t = len(df_p[df_p["Event"] == "perdida"])
     remates_t  = len(df_p[df_p["Event"] == "remate"]) + len(df_p[df_p["Event"] == "gol"])
-    # ── CAMBIO 1: goles desde fixture ──
     goles_t    = int(fixture_row["goles_favor"].values[0]) if not fixture_row.empty and str(fixture_row["estado"].values[0]) == "Jugado" else 0
     faltas_t   = len(df_p[df_p["Event"] == "falta cometida"])
     ratio      = round(pases_t / perdidas_t, 1) if perdidas_t > 0 else "—"
@@ -498,29 +356,33 @@ def generar_imagen(df_p, rival, condicion, resultado, num_fecha, fixture_row):
     header_ax = fig.add_axes([0.05, 0.90, 0.90, 0.08])
     header_ax.axis("off")
     header_ax.text(0.5, 0.70, f"Estrella de Berisso vs {rival}",
-                   color="#8A2525", fontsize=22, fontweight="bold", ha="center", va="center", fontfamily="serif")
+                   color="#8A2525", fontsize=22, fontweight="bold",
+                   ha="center", va="center", fontfamily="serif")
     partido_txt = f"Fecha {num_fecha}  ·  {condicion}"
     if resultado: partido_txt += f"  ·  Resultado: {resultado}"
     header_ax.text(0.5, 0.25, partido_txt,
-                   color="#3D2C24", fontsize=11, fontweight="bold", ha="center", va="center", fontfamily="serif")
+                   color="#3D2C24", fontsize=11, fontweight="bold",
+                   ha="center", va="center", fontfamily="serif")
 
     fig.add_axes([0.05, 0.89, 0.90, 0.002], facecolor="#8A2525").axis("off")
 
     # Títulos Fila 1
-    fig.text(0.05, 0.865, "Pases en el Último Tercio", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
-    fig.text(0.415, 0.865, "Estadísticas", color="#3D2C24", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
-    fig.text(0.62, 0.865, "Presión en Campo Rival", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.05,  0.865, "Pases en el Último Tercio",  color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.415, 0.865, "Estadísticas",               color="#3D2C24", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.62,  0.865, "Presión en Campo Rival",     color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
     # 2. Fila 1 Subplots
-    ax_pases   = fig.add_axes([0.05, 0.67, 0.33, 0.18])
+    ax_pases   = fig.add_axes([0.05,  0.67, 0.33, 0.18])
     ax_table   = fig.add_axes([0.415, 0.67, 0.17, 0.18])
-    ax_heatmap = fig.add_axes([0.62, 0.67, 0.33, 0.18])
+    ax_heatmap = fig.add_axes([0.62,  0.67, 0.33, 0.18])
     grafico_pases_ultimo_tercio(df_p, ax=ax_pases)
     grafico_presion_rival(df_p, ax=ax_heatmap)
 
     ax_table.axis("off")
-    ax_table.text(0.05, 0.88, "Métrica", color="#3D2C24", fontsize=10, fontweight="bold", ha="left", fontfamily="monospace")
-    ax_table.text(0.95, 0.88, "Valor",   color="#3D2C24", fontsize=10, fontweight="bold", ha="right", fontfamily="monospace")
+    ax_table.text(0.05, 0.88, "Métrica", color="#3D2C24", fontsize=10,
+                  fontweight="bold", ha="left", fontfamily="monospace")
+    ax_table.text(0.95, 0.88, "Valor",   color="#3D2C24", fontsize=10,
+                  fontweight="bold", ha="right", fontfamily="monospace")
     ax_table.plot([0.01, 0.99], [0.82, 0.82], color="#7A6A5E", linewidth=1.5)
     kpis_table_data = [
         ("Pases",          str(pases_t),    True),
@@ -533,21 +395,28 @@ def generar_imagen(df_p, rival, condicion, resultado, num_fecha, fixture_row):
     ]
     y_val = 0.70
     for label, val, accent in kpis_table_data:
-        ax_table.text(0.05, y_val, label, color="#3D2C24", fontsize=10, ha="left", fontfamily="monospace")
-        ax_table.text(0.95, y_val, val, color="#A83232" if accent else "#3D2C24", fontweight="bold", ha="right", fontfamily="monospace")
-        ax_table.plot([0.01, 0.99], [y_val - 0.05, y_val - 0.05], color="#7A6A5E", linewidth=0.5, linestyle=":")
+        ax_table.text(0.05, y_val, label, color="#3D2C24", fontsize=10,
+                      ha="left", fontfamily="monospace")
+        ax_table.text(0.95, y_val, val,
+                      color="#A83232" if accent else "#3D2C24",
+                      fontweight="bold", ha="right", fontfamily="monospace")
+        ax_table.plot([0.01, 0.99], [y_val - 0.05, y_val - 0.05],
+                      color="#7A6A5E", linewidth=0.5, linestyle=":")
         y_val -= 0.10
 
     # Título Fila 2
-    fig.text(0.05, 0.61, "Actividad por Minuto", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.05, 0.61, "Actividad por Minuto", color="#8A2525", fontsize=12,
+             fontweight="bold", ha="left", fontfamily="serif")
 
     # 3. Fila 2 Subplot: Actividad
     ax_act = fig.add_axes([0.05, 0.48, 0.90, 0.11])
     grafico_actividad(df_p, ax=ax_act)
 
     # Títulos Fila 3
-    fig.text(0.05, 0.42, "Pases Largos al Último Tercio (>30m)", color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
-    fig.text(0.55, 0.42, "Mapa de Remates en el Área",           color="#8A2525", fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.05, 0.42, "Pases Largos al Último Tercio (>30m)", color="#8A2525",
+             fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
+    fig.text(0.55, 0.42, "Mapa de Remates en el Área",           color="#8A2525",
+             fontsize=12, fontweight="bold", ha="left", fontfamily="serif")
 
     # 4. Fila 3 Subplots
     ax_largos  = fig.add_axes([0.05, 0.12, 0.40, 0.28])
@@ -558,12 +427,17 @@ def generar_imagen(df_p, rival, condicion, resultado, num_fecha, fixture_row):
     fig.add_axes([0.05, 0.07, 0.90, 0.002], facecolor="#7A6A5E").axis("off")
 
     # 5. Firma
-    fig.text(0.05, 0.035, "IAO Footbal Analytics",          color="#8A2525", fontsize=12, ha="left",   va="center", fontweight="bold", fontfamily="serif")
-    fig.text(0.05, 0.015, "video-analisis-app.streamlit.app", color="#7A6A5E", fontsize=9,  ha="left",   va="center", fontfamily="serif")
-    fig.text(0.5,  0.025, "IAO",                             color="#8A2525", fontsize=24, ha="center", va="center", fontfamily="serif", fontstyle="italic", fontweight="bold")
-    fig.text(0.95, 0.025, "Análisis de Video y Datos",       color="#3D2C24", fontsize=10, ha="right",  va="center", fontfamily="serif")
+    fig.text(0.05, 0.035, "IAO Footbal Analytics",            color="#8A2525", fontsize=12,
+             ha="left",   va="center", fontweight="bold", fontfamily="serif")
+    fig.text(0.05, 0.015, "video-analisis-app.streamlit.app", color="#7A6A5E", fontsize=9,
+             ha="left",   va="center", fontfamily="serif")
+    fig.text(0.5,  0.025, "IAO",                              color="#8A2525", fontsize=24,
+             ha="center", va="center", fontfamily="serif", fontstyle="italic", fontweight="bold")
+    fig.text(0.95, 0.025, "Análisis de Video y Datos",        color="#3D2C24", fontsize=10,
+             ha="right",  va="center", fontfamily="serif")
 
-    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight",
+                facecolor=fig.get_facecolor())
     buf.seek(0)
     plt.close(fig)
     return buf
