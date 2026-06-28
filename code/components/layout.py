@@ -178,6 +178,7 @@ def render_sidebar(base_path):
         (os.path.join(base_path, "pages", "5_Alertas.py"),           "Alertas"),
         (os.path.join(base_path, "pages", "6_Videos.py"),            "Videos"),
         (os.path.join(base_path, "pages", "7_Reporte.py"),           "Reporte"),
+        (os.path.join(base_path, "pages", "8_Player_review.py"),     "Review"),
     ]
     for ruta_abs, nombre in paginas:
         if os.path.exists(ruta_abs):
