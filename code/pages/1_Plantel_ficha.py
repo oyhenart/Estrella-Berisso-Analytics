@@ -175,7 +175,7 @@ def cargar_jugadores() -> pd.DataFrame:
 
         df["fecha_nacimiento"] = pd.to_datetime(
             df["fecha_nacimiento"],
-            format="%d-%m-%Y",   # DD-MM-YYYY
+            format="%d-%m-%Y",
             errors="coerce"
         )
 
@@ -195,15 +195,12 @@ def cargar_jugadores() -> pd.DataFrame:
             )
         )
 
-df["edad"] = df["edad"].astype("Int64")   # entero que acepta vacíos
-
-        df["edad"] = df["edad"].fillna("—")
+        df["edad"] = df["edad"].astype("Int64")
 
     else:
         df["edad"] = "—"
 
     return df
-
 
 @st.cache_data(ttl=0)
 def cargar_alertas() -> pd.DataFrame:
