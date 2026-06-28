@@ -1,19 +1,3 @@
-"""
-plantel_ficha.py  —  Estrella FC · Ficha Dinámica por Jugador
-=============================================================
-CAMBIOS MOBILE v2:
-  • Grilla adaptativa: 2 cols en mobile, 4 en desktop (CSS media query)
-  • Ficha usa st.expander → abre inline, sin rerun ni scroll perdido
-  • Radar desactivado en mobile → reemplazado por métricas simples (mucho más rápido)
-  • Imágenes: tamaño fijo pequeño, sin use_container_width en grilla
-  • render_mobile_nav() agregado para consistencia con resto de la app
-
-CAMBIOS RADAR v3:
-  • Escala fija por métrica (ESCALA_RADAR) → todos los radares son comparables
-  • range=[0, 100] fijo en eje radial → nunca se auto-ajusta
-  • Tooltip muestra valor real, no el normalizado
-"""
-
 import os
 import streamlit as st
 import pandas as pd
@@ -210,6 +194,8 @@ def cargar_jugadores() -> pd.DataFrame:
                 )
             )
         )
+
+df["edad"] = df["edad"].astype("Int64")   # entero que acepta vacíos
 
         df["edad"] = df["edad"].fillna("—")
 
