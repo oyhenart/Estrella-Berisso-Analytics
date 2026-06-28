@@ -111,11 +111,41 @@ ESCALA_RADAR = {
 # ── Carga de datos ────────────────────────────────────────────────────────────
 @st.cache_data(ttl=0)
 def cargar_jugadores():
+
     df = pd.read_csv(JUG_PATH)
-    df["nombre"]   = df["nombre"].str.strip().str.title()
+
+    df["nombre"] = df["nombre"].str.strip().str.title()
     df["posicion"] = df["posicion"].str.strip().str.title()
-    if "edad" not in df.columns:
+
+    if "fecha_nacimiento" in df.columns:
+
+        df["fecha_nacimiento"] = pd.to_datetime(
+            df["fecha_nacimiento"],
+            format="%d-%m-%Y",
+            errors="coerce"
+        )
+
+        hoy = pd.Timestamp.today()
+
+        df["edad"] = (
+            hoy.year
+            - df["fecha_nacimiento"].dt.year
+            - (
+                (hoy.month < df["fecha_nacimiento"].dt.month)
+                |
+                (
+                    (hoy.month == df["fecha_nacimiento"].dt.month)
+                    &
+                    (hoy.day < df["fecha_nacimiento"].dt.day)
+                )
+            )
+        )
+
+        df["edad"] = df["edad"].astype("Int64")
+
+    else:
         df["edad"] = "—"
+
     return df
 
 @st.cache_data(ttl=0)
