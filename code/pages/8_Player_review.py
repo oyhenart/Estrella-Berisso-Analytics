@@ -327,13 +327,3 @@ def generar_imagen_jugador(jugador: str, row_jug, eventos: pd.DataFrame,
     buf.seek(0)
     plt.close(fig)
     return buf
-
-
-# ════════════════════════════════════════════════════════════════════════
-# BLOQUE UI: REPORTE
-# (pegar al final de 8_Player_review.py, después de la sección de videos,
-#  fuera de los `with col_stats:` / `with col_videos:`)
-# ════════════════════════════════════════════════════════════════════════
-st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
-st.markdown("<div style='height:1px;background:#1F2937;margin-bottom:20px'></div>",
-            unsafe_allow_html=True)
