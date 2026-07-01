@@ -337,4 +337,3 @@ def generar_imagen_jugador(jugador: str, row_jug, eventos: pd.DataFrame,
 st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
 st.markdown("<div style='height:1px;background:#1F2937;margin-bottom:20px'></div>",
             unsafe_allow_html=True)
-st.markdown("""'"""'"""'.format() if False else '' # placeholder, ver bloque real abajo sin f-strings anidados
