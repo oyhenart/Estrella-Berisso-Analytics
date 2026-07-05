@@ -19,8 +19,9 @@ VELOCIDAD (Sprint)
 Test de sprint evaluado a todo el plantel. Según el día, se toma con
 cronómetro manual (solo 40m) o con radar y splits completos (10m/20m/40m
 + velocidad pico). Se carga a mano en data/velocidad_fisica.csv
-con columnas: fecha, jugador, tiempo_40m, tiempo_10m, tiempo_20m,
-velocidad_pico, puesto
+con columnas: Nombre, Fecha, 40m, 10m, 20m, Pico, Observacion,
+Evaluacion_Nivel (la columna "Evaluacion" sin "_Nivel" es solo una
+etiqueta de texto del test, no se usa como categoría).
 """
 
 import os
@@ -62,6 +63,35 @@ EVAL_COLORS = {
     "BAJO":        "#F87171",
 }
 EVAL_ORDER = ["NIVEL ÉLITE", "MUY BUENO", "BUENO", "ACEPTABLE", "BAJO"]
+
+EVAL_COLORS_VELOC = {
+    "ÉLITE":            "#A78BFA",
+    "MUY BUENO":        "#34D399",
+    "BUENO":            "#60A5FA",
+    "REGULAR":          "#FBBF24",
+    "MARGEN DE MEJORA": "#F87171",
+}
+EVAL_ORDER_VELOC = ["ÉLITE", "MUY BUENO", "BUENO", "REGULAR", "MARGEN DE MEJORA"]
+
+
+def agrupar_puesto(puesto):
+    """
+    Agrupa la posición detallada del CSV en Defensor / Mediocampo / Delantero /
+    Arquero / Otro, tolerando variantes de casing y abreviaturas del CT
+    (ej. 'CENTRAL DER', 'LAT DER', 'Lateral Volante').
+    """
+    if pd.isna(puesto):
+        return "Otro"
+    p = str(puesto).lower()
+    if "delant" in p:
+        return "Delantero"
+    if "medio" in p or "volante" in p:
+        return "Mediocampo"
+    if "defen" in p or "lateral" in p or "central" in p or "lat " in p or p.strip() == "lat der":
+        return "Defensor"
+    if "arque" in p:
+        return "Arquero"
+    return "Otro"
 
 
 # ==========================
@@ -130,8 +160,8 @@ def nombre_fecha_test(fecha):
 
 @st.cache_data(ttl=0)
 def cargar_velocidad():
-    cols = ["fecha", "jugador", "tiempo_40m", "tiempo_10m",
-            "tiempo_20m", "velocidad_pico", "puesto"]
+    cols = ["fecha", "jugador", "tiempo_40m", "tiempo_10m", "tiempo_20m",
+            "velocidad_pico", "puesto", "puesto_grupo", "evaluacion"]
     if not os.path.exists(VELOC_PATH):
         return pd.DataFrame(columns=cols)
     df = pd.read_csv(VELOC_PATH)
@@ -143,6 +173,10 @@ def cargar_velocidad():
         "20m": "tiempo_20m",
         "Pico": "velocidad_pico",
         "Observacion": "puesto",
+        "Evaluacion_Nivel": "evaluacion",
+        # "Evaluacion" (sin "_Nivel") es solo una etiqueta de texto del test
+        # (ej. "Test de Velocidad 40m - 2026-07-03"), igual para todo el
+        # plantel — no aporta como categoría, así que no se usa.
     })
     # El CSV trae "APELLIDO, NOMBRE" — usamos solo el apellido para
     # matchear con el resto de las páginas (salto, distancia, plantel).
@@ -155,6 +189,16 @@ def cargar_velocidad():
             df[c] = pd.to_numeric(df[c], errors="coerce")
     if "puesto" in df.columns:
         df["puesto"] = df["puesto"].astype(str).str.strip().str.title()
+        df["puesto_grupo"] = df["puesto"].apply(agrupar_puesto)
+    else:
+        df["puesto_grupo"] = "Otro"
+    if "evaluacion" in df.columns:
+        df["evaluacion"] = df["evaluacion"].astype(str).str.strip().str.upper()
+    else:
+        df["evaluacion"] = pd.NA
+    for c in cols:
+        if c not in df.columns:
+            df[c] = pd.NA
     return df[cols]
 
 
@@ -419,7 +463,7 @@ if velocidad.empty:
     st.warning(
         "Todavía no hay datos de velocidad cargados. "
         "Agregá filas en `data/velocidad_fisica.csv` con columnas: "
-        "`fecha, jugador, tiempo_40m, tiempo_10m, tiempo_20m, velocidad_pico, puesto`."
+        "`fecha, jugador, tiempo_40m, tiempo_10m, tiempo_20m, velocidad_pico, puesto, evaluacion`."
     )
 else:
     fechas_veloc = sorted(velocidad["fecha"].dropna().unique().tolist(), reverse=True)
@@ -430,8 +474,19 @@ else:
         key="veloc_fecha",
     )
 
+    df_v_fecha = velocidad[velocidad["fecha"] == fecha_veloc_sel].reset_index(drop=True)
+
+    # ── Filtro por posición ──────────────────────────────────────────────
+    grupos_disponibles = sorted(df_v_fecha["puesto_grupo"].dropna().unique().tolist())
+    grupos_sel = st.multiselect(
+        "Filtrar por posición",
+        grupos_disponibles,
+        default=grupos_disponibles,
+        key="veloc_puesto_filtro",
+    )
+
     df_v = (
-        velocidad[velocidad["fecha"] == fecha_veloc_sel]
+        df_v_fecha[df_v_fecha["puesto_grupo"].isin(grupos_sel)]
         .sort_values("tiempo_40m", ascending=True)
         .reset_index(drop=True)
     )
@@ -446,19 +501,39 @@ else:
         )
 
     if df_v.empty:
-        st.info("Sin datos cargados para este test.")
+        st.info("Sin datos para los filtros seleccionados.")
     else:
-        # Gráfico de barras · Tiempo en 40m, ordenado de más rápido a más lento
+        # Gráfico de barras · Tiempo en 40m, ordenado de más rápido a más lento,
+        # coloreado por nivel de evaluación (si está cargada)
         fig3 = go.Figure()
-        fig3.add_trace(go.Bar(
-            x=df_v["jugador"],
-            y=df_v["tiempo_40m"],
-            marker_color="#E23E3E",
-            text=df_v["tiempo_40m"].round(2),
-            textposition="outside",
-            hovertext=df_v["puesto"],
-            hovertemplate="%{x}<br>40m: %{y:.2f}s<br>%{hovertext}<extra></extra>",
-        ))
+        if df_v["evaluacion"].notna().any():
+            for ev in EVAL_ORDER_VELOC:
+                sub = df_v[df_v["evaluacion"] == ev]
+                if sub.empty:
+                    continue
+                fig3.add_trace(go.Bar(
+                    x=sub["jugador"],
+                    y=sub["tiempo_40m"],
+                    name=ev,
+                    marker_color=EVAL_COLORS_VELOC.get(ev, "#6B7280"),
+                    text=sub["tiempo_40m"].round(2),
+                    textposition="outside",
+                    hovertext=sub["puesto"],
+                    hovertemplate="%{x}<br>40m: %{y:.2f}s<br>%{hovertext}<extra></extra>",
+                ))
+            legend_cfg = dict(title="Evaluación", orientation="h", y=-0.25)
+        else:
+            fig3.add_trace(go.Bar(
+                x=df_v["jugador"],
+                y=df_v["tiempo_40m"],
+                marker_color="#E23E3E",
+                text=df_v["tiempo_40m"].round(2),
+                textposition="outside",
+                hovertext=df_v["puesto"],
+                hovertemplate="%{x}<br>40m: %{y:.2f}s<br>%{hovertext}<extra></extra>",
+            ))
+            legend_cfg = dict()
+
         fig3.update_layout(
             plot_bgcolor="#111827",
             paper_bgcolor="#111827",
@@ -467,14 +542,15 @@ else:
             xaxis_title="",
             margin=dict(t=10, b=10, l=10, r=10),
             height=420,
-            showlegend=False,
+            showlegend=df_v["evaluacion"].notna().any(),
+            legend=legend_cfg,
         )
         st.plotly_chart(fig3, use_container_width=True)
 
         st.markdown("##### Detalle del test")
         tabla_v = df_v[[
             "jugador", "puesto", "tiempo_40m", "tiempo_10m",
-            "tiempo_20m", "velocidad_pico"
+            "tiempo_20m", "velocidad_pico", "evaluacion"
         ]].rename(columns={
             "jugador": "Jugador",
             "puesto": "Puesto",
@@ -482,16 +558,43 @@ else:
             "tiempo_10m": "10m (seg)",
             "tiempo_20m": "20m (seg)",
             "velocidad_pico": "Vel. Pico (km/h)",
+            "evaluacion": "Evaluación",
         }).copy()
         for col in ["40m (seg)", "10m (seg)", "20m (seg)"]:
             tabla_v[col] = tabla_v[col].map(lambda x: f"{x:.3f}" if pd.notna(x) else "—")
         tabla_v["Vel. Pico (km/h)"] = tabla_v["Vel. Pico (km/h)"].map(
             lambda x: f"{x:.2f}" if pd.notna(x) else "—"
         )
+        tabla_v["Evaluación"] = tabla_v["Evaluación"].fillna("—")
         st.dataframe(
             tabla_v,
             hide_index=True,
             use_container_width=True,
+        )
+
+        st.markdown("##### 🎯 Promedio de 40m por posición")
+        comparativa = (
+            df_v_fecha.groupby("puesto_grupo")["tiempo_40m"]
+            .agg(jugadores="count", promedio_40m="mean", mejor_40m="min")
+            .sort_values("promedio_40m")
+            .reset_index()
+            .rename(columns={
+                "puesto_grupo": "Posición",
+                "jugadores": "Jugadores",
+                "promedio_40m": "Promedio 40m (seg)",
+                "mejor_40m": "Mejor 40m (seg)",
+            })
+        )
+        comparativa["Promedio 40m (seg)"] = comparativa["Promedio 40m (seg)"].round(2)
+        comparativa["Mejor 40m (seg)"] = comparativa["Mejor 40m (seg)"].round(2)
+        st.dataframe(
+            comparativa,
+            hide_index=True,
+            use_container_width=True,
+        )
+        st.caption(
+            "Comparativa calculada sobre todo el plantel evaluado ese día "
+            "(no aplica el filtro de posición de arriba)."
         )
 
     st.divider()
