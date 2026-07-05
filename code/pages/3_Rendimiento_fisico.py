@@ -296,7 +296,7 @@ else:
     st.dataframe(
         historial_view,
         hide_index=True,
-        use_container_width=True,
+        width='stretch',
     )
 
     st.divider()
@@ -321,7 +321,7 @@ else:
     st.dataframe(
         acumulado,
         hide_index=True,
-        use_container_width=True,
+        width='stretch',
     )
 
     st.caption(
@@ -387,7 +387,7 @@ else:
             margin=dict(t=10, b=10, l=10, r=10),
             height=420,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         st.markdown("##### Detalle del test")
         tabla_s = df_s[[
@@ -404,7 +404,7 @@ else:
         st.dataframe(
             tabla_s,
             hide_index=True,
-            use_container_width=True,
+            width='stretch',
         )
 
     st.divider()
@@ -445,7 +445,7 @@ else:
             margin=dict(t=10, b=10, l=10, r=10),
             height=380,
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
     st.caption(
         "El test de salto (CMJ) se aplica a todo el plantel disponible en cada "
@@ -542,10 +542,10 @@ else:
             xaxis_title="",
             margin=dict(t=10, b=10, l=10, r=10),
             height=420,
-            showlegend=df_v["evaluacion"].notna().any(),
+            showlegend=bool(df_v["evaluacion"].notna().any()),
             legend=legend_cfg,
         )
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig3, width='stretch')
 
         st.markdown("##### Detalle del test")
         tabla_v = df_v[[
@@ -569,7 +569,7 @@ else:
         st.dataframe(
             tabla_v,
             hide_index=True,
-            use_container_width=True,
+            width='stretch',
         )
 
         st.markdown("##### 🎯 Promedio de 40m por posición")
@@ -590,7 +590,7 @@ else:
         st.dataframe(
             comparativa,
             hide_index=True,
-            use_container_width=True,
+            width='stretch',
         )
         st.caption(
             "Comparativa calculada sobre todo el plantel evaluado ese día "
@@ -636,7 +636,7 @@ else:
             margin=dict(t=10, b=10, l=10, r=10),
             height=380,
         )
-        st.plotly_chart(fig4, use_container_width=True)
+        st.plotly_chart(fig4, width='stretch')
 
     st.caption(
         "El test de velocidad combina dos métodos de toma de tiempo: cronómetro "
