@@ -13,7 +13,7 @@ que al elegir despliega TODA la info junta, sin expanders anidados:
                                                   data/velocidad_fisica.csv)
   · Mapa de cancha (calor + pases)              (events_clean.csv, mplsoccer)
   · Videos del jugador                          (data/videos_jugadores.csv)
-  · Observaciones + detalle por partido
+  · Historial de tests físicos + detalle por partido
 
 La "Vista colectiva" (stats de equipo) se mantiene igual que antes,
 activable con el botón "📊 Stats" — no depende del selector de jugador.
@@ -822,6 +822,55 @@ else:
                 <div class='mini-sub' style='color:{color_ev}'>{ev} · {nombre_fecha_test(fecha_u)}</div></div>
             """, unsafe_allow_html=True)
 
+    # ── Historial de tests físicos (reemplaza la sección de Observaciones) ────
+    st.markdown("<div class='seccion-titulo'>📈 Historial de tests físicos</div>",
+                unsafe_allow_html=True)
+    hist_tabs = st.tabs(["Salto (CMJ)", "Velocidad (Sprint)", "Distancia (GPS)"])
+
+    with hist_tabs[0]:
+        if saltos_j.empty:
+            st.caption("Sin tests de salto cargados para este jugador.")
+        else:
+            tabla_saltos = (
+                saltos_j.sort_values("fecha", ascending=False)
+                .assign(fecha=lambda d: d["fecha"].dt.strftime("%d/%m/%Y"))
+                [["fecha", "altura_cm", "potencia_w", "potencia_relativa", "peso_kg", "evaluacion"]]
+                .rename(columns={
+                    "fecha": "Fecha", "altura_cm": "Altura (cm)",
+                    "potencia_w": "Potencia (W)", "potencia_relativa": "Potencia rel. (W/kg)",
+                    "peso_kg": "Peso (kg)", "evaluacion": "Evaluación",
+                })
+            )
+            st.dataframe(tabla_saltos, hide_index=True, width='stretch')
+
+    with hist_tabs[1]:
+        if veloc_j.empty:
+            st.caption("Sin tests de velocidad cargados para este jugador.")
+        else:
+            tabla_veloc = (
+                veloc_j.sort_values("fecha", ascending=False)
+                .assign(fecha=lambda d: d["fecha"].dt.strftime("%d/%m/%Y"))
+                [["fecha", "tiempo_10m", "tiempo_20m", "tiempo_40m", "velocidad_pico", "evaluacion"]]
+                .rename(columns={
+                    "fecha": "Fecha", "tiempo_10m": "10m (s)", "tiempo_20m": "20m (s)",
+                    "tiempo_40m": "40m (s)", "velocidad_pico": "Vel. pico (km/h)",
+                    "evaluacion": "Evaluación",
+                })
+            )
+            st.dataframe(tabla_veloc, hide_index=True, width='stretch')
+
+    with hist_tabs[2]:
+        if dist_j.empty:
+            st.caption("Sin registros de distancia (Top 3) para este jugador.")
+        else:
+            tabla_dist = (
+                dist_j.sort_values("fecha", ascending=False)
+                .assign(rival=lambda d: d["fecha"].apply(lambda f: nombre_rival(f, fixture)))
+                [["rival", "distancia_km"]]
+                .rename(columns={"rival": "Partido", "distancia_km": "Distancia (km)"})
+            )
+            st.dataframe(tabla_dist, hide_index=True, width='stretch')
+
     # ── Mapa de cancha ────────────────────────────────────────────────────────
     if not eventos.empty:
         st.markdown("<div class='seccion-titulo'>🗺️ Mapa de cancha (temporada)</div>",
@@ -872,20 +921,6 @@ else:
                 st.components.v1.iframe(
                     f"https://www.youtube.com/embed/{vrow['youtube_id']}", height=360,
                 )
-
-    # ── Observaciones ─────────────────────────────────────────────────────────
-    st.markdown("<div class='seccion-titulo'>📝 Observaciones</div>", unsafe_allow_html=True)
-    if "obs_cache" not in st.session_state:
-        st.session_state.obs_cache = {}
-    obs_val = st.session_state.obs_cache.get(nombre, "")
-    nueva = st.text_area(
-        "Notas", value=obs_val, height=110,
-        placeholder="Notas tácticas, comportamientos...",
-        key=f"obs_{nombre}", label_visibility="collapsed",
-    )
-    if st.button("💾 Guardar", key=f"save_{nombre}"):
-        st.session_state.obs_cache[nombre] = nueva
-        st.success("Guardado.")
 
     # ── Detalle por partido ────────────────────────────────────────────────────
     if not eventos.empty:
