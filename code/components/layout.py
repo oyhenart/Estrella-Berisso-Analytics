@@ -3,7 +3,14 @@
 # ==========================================
 import streamlit as st
 import os
-import st_yled  # ← NUEVO: librería de theming, no usa iframes/React (liviana)
+
+# ── FIX: Streamlit quitó st.bokeh_chart en versiones recientes, pero
+# st_yled todavía lo referencia al importar -> rompe toda la app.
+# Este shim evita el AttributeError sin tocar requirements.txt.
+if not hasattr(st, "bokeh_chart"):
+    st.bokeh_chart = lambda *args, **kwargs: None
+
+import st_yled  # ← librería de theming, no usa iframes/React (liviana)
 
 # ==========================
 # THEME (st_yled) — se llama UNA sola vez por render, es solo CSS/config
@@ -32,20 +39,23 @@ header { visibility: hidden; }
 [data-testid="stSidebarNav"] { display: none; }
 
 /* ── BOTÓN HAMBURGUESA MOBILE ── */
+/* Reubicado arriba a la DERECHA de la barra de nav, para no pisar
+   los íconos del mobile-nav (que ahora vive arriba, centrado/izquierda) */
 [data-testid="collapsedControl"] {
     display: flex !important;
     visibility: visible !important;
     background: #E23E3E !important;
     border-radius: 10px !important;
-    width: 44px !important;
-    height: 44px !important;
+    width: 40px !important;
+    height: 40px !important;
     align-items: center !important;
     justify-content: center !important;
     box-shadow: 0 4px 14px rgba(226,62,62,.45) !important;
-    top: 14px !important;
-    left: 14px !important;
+    top: 8px !important;
+    right: 10px !important;
+    left: auto !important;
     position: fixed !important;
-    z-index: 9999 !important;
+    z-index: 10000 !important;
 }
 [data-testid="collapsedControl"] svg {
     fill: white !important;
@@ -66,10 +76,11 @@ header { visibility: hidden; }
 /* ── MOBILE ── */
 @media (max-width: 768px) {
     .block-container {
-        padding-top: 4rem !important;
+        /* espacio para la barra fija de arriba (56px) + aire */
+        padding-top: 4.75rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
-        padding-bottom: 80px !important;
+        padding-bottom: 1.5rem !important;
     }
     div[data-testid="column"] {
         min-width: 0 !important;
@@ -87,7 +98,7 @@ html, body {
 """, unsafe_allow_html=True)
 
 # ==========================
-# MOBILE NAV (barra inferior)
+# MOBILE NAV (barra superior, ya no inferior)
 # ==========================
 def render_mobile_nav():
     st.markdown("""
@@ -95,31 +106,34 @@ def render_mobile_nav():
 @media (max-width: 768px) {
     .mobile-nav {
         position: fixed;
-        bottom: 0;
+        top: 0;
         left: 0;
         right: 0;
         z-index: 9998;
         background: #0d131f;
-        border-top: 1px solid rgba(255,255,255,0.08);
-        padding: 8px 0 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: 8px 54px 8px 10px; /* deja hueco a la derecha para el hamburger */
         display: flex;
         justify-content: space-around;
         align-items: center;
+        overflow-x: auto;
     }
     .mobile-nav a {
         color: #9CA3AF;
         text-decoration: none;
-        font-size: 0.65rem;
+        font-size: 0.62rem;
         font-weight: 700;
         text-align: center;
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        line-height: 1.2;
+        gap: 2px;
+        line-height: 1.1;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        flex-shrink: 0;
+        padding: 0 4px;
     }
-    .mobile-nav a .icon { font-size: 1.3rem; }
+    .mobile-nav a .icon { font-size: 1.1rem; }
 }
 @media (min-width: 769px) {
     .mobile-nav { display: none; }
