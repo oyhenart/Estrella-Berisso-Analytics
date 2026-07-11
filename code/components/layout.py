@@ -4,13 +4,18 @@
 import streamlit as st
 import os
 
+# ── DIAGNÓSTICO: cambiá a True para reactivar st_yled una vez confirmemos
+# si es o no la causa del freeze al minimizar/restaurar la ventana.
+USAR_ST_YLED = False
+
 # ── FIX: Streamlit quitó st.bokeh_chart en versiones recientes, pero
 # st_yled todavía lo referencia al importar -> rompe toda la app.
 # Este shim evita el AttributeError sin tocar requirements.txt.
 if not hasattr(st, "bokeh_chart"):
     st.bokeh_chart = lambda *args, **kwargs: None
 
-import st_yled  # ← librería de theming, no usa iframes/React (liviana)
+if USAR_ST_YLED:
+    import st_yled  # ← librería de theming, no usa iframes/React (liviana)
 
 # ==========================
 # THEME (st_yled) — se llama UNA sola vez por render, es solo CSS/config
@@ -23,7 +28,8 @@ def init_theme():
         st_yled.init(theme="bauhaus")
     Por ahora lo dejamos neutro para no pisar tus colores actuales (#E23E3E, etc).
     """
-    st_yled.init()
+    if USAR_ST_YLED:
+        st_yled.init()
 
 # ==========================
 # CSS (tu sistema actual, intacto)
