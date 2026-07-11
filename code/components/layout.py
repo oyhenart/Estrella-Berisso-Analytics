@@ -44,28 +44,25 @@ footer { visibility: hidden; }
 header { visibility: hidden; }
 [data-testid="stSidebarNav"] { display: none; }
 
-/* ── BOTÓN HAMBURGUESA MOBILE ── */
-/* Reubicado arriba a la DERECHA de la barra de nav, para no pisar
-   los íconos del mobile-nav (que ahora vive arriba, centrado/izquierda) */
+/* ── SIDEBAR SIEMPRE VISIBLE (no replegable) ── */
+/* Ocultamos el botón que colapsa/expande el sidebar... */
 [data-testid="collapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    background: #E23E3E !important;
-    border-radius: 10px !important;
-    width: 40px !important;
-    height: 40px !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 4px 14px rgba(226,62,62,.45) !important;
-    top: 8px !important;
-    right: 10px !important;
-    left: auto !important;
-    position: fixed !important;
-    z-index: 10000 !important;
+    display: none !important;
 }
-[data-testid="collapsedControl"] svg {
-    fill: white !important;
-    stroke: white !important;
+/* ...y forzamos que el sidebar quede siempre expandido, incluso si
+   Streamlit le mete aria-expanded="false" (que es como lo "repliega"
+   por dentro con un transform). */
+section[data-testid="stSidebar"] {
+    transform: none !important;
+    visibility: visible !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
+}
+section[data-testid="stSidebar"][aria-expanded="false"] {
+    transform: none !important;
+    visibility: visible !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
 }
 
 .stApp {
