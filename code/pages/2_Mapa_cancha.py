@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 
 from components.layout import (
     inject_css,
-    render_sidebar
+    render_sidebar,
+    filtro_dt,
 )
 
 # ── Configuración de Página ─────────────────────────────────────────
@@ -57,7 +58,7 @@ if not os.path.exists(FIXTURE_PATH):
     st.stop()
 
 df_original = cargar_datos()
-fixture = pd.read_csv(FIXTURE_PATH)
+fixture_completo = pd.read_csv(FIXTURE_PATH)
 
 # ── Clasificación Automática de Pases ─────────────────────────────
 def clasificar_pases(df):
@@ -125,6 +126,17 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# ── Filtro de ciclo de DT (solo aparece si hay ≥2 DT cargados) ────
+# Se aplica ANTES que el resto de los filtros: acota qué fechas
+# quedan disponibles en el selector "Partido" de abajo.
+fixture, dt_activo = filtro_dt(fixture_completo, key="dt_mapa")
+if dt_activo:
+    st.markdown(f"<span class='badge-dt'>Ciclo: {dt_activo}</span>",
+                unsafe_allow_html=True)
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    fechas_del_ciclo = fixture["fecha"].tolist()
+    df_original = df_original[df_original["fecha"].isin(fechas_del_ciclo)]
 
 # ── Filtros en UI ─────────────────────────────────────────────────
 fechas_disponibles = sorted(df_original["fecha"].unique().tolist())
@@ -230,7 +242,6 @@ if not df_filtrado.empty:
                 for df_pases, color in [(pases_ok, "#22C55E"), (pases_bad, "#EF4444")]:
                     if df_pases.empty:
                         continue
-                    # Promedio REAL de coordenadas, agrupado por bin
                     agrupado = (
                         df_pases
                         .groupby(["X_bin", "Y_bin", "X2_bin", "Y2_bin"])
@@ -257,7 +268,6 @@ if not df_filtrado.empty:
                             ax=ax, color=color, width=grosor, alpha=alpha
                         )
             else:
-                # Partido + jugador específico → flechas individuales
                 pases_ok  = subset_flechas[subset_flechas["pase_ok"]]
                 pases_bad = subset_flechas[~subset_flechas["pase_ok"]]
                 if not pases_ok.empty:
