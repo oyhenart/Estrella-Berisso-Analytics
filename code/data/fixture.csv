@@ -1,12 +1,12 @@
-fecha,condicion,rival,goles_favor,goles_contra,estado
-1,Local,Deportivo Metalúrgico,0,1,Jugado
-2,Local,Atlético Pilar,1,0,Jugado
-3,Visitante,CUDP,1,0,Jugado
-4,Local,Defensores de Glew,1,1,Jugado
-5,Visitante,Hacoaj,2,2,Jugado
-6,Local,Juventud de Bernal,1,2,Jugado
-7,Visitante,Social Atlético TV,0,4,Jugado
-8,Visitante,Deportivo Metalúrgico,,,Pendiente
+fecha,condicion,rival,goles_favor,goles_contra,estado,dt
+1,Local,Deportivo Metalúrgico,0,1,Jugado,sosa
+2,Local,Atlético Pilar,1,0,Jugado,sosa
+3,Visitante,CUDP,1,0,Jugado,sosa
+4,Local,Defensores de Glew,1,1,Jugado,sosa
+5,Visitante,Hacoaj,2,2,Jugado,sosa
+6,Local,Juventud de Bernal,1,2,Jugado,sosa
+7,Visitante,Social Atlético TV,0,4,Jugado,sosa
+8,Visitante,Deportivo Metalúrgico,0,1,Pendiente,zein
 9,Visitante,Atlético Pilar,,,Pendiente
 10,Local,CUDP,,,Pendiente
 11,Visitante,Defensores de Glew,,,Pendiente
