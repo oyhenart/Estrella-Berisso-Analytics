@@ -1,29 +1,3 @@
-"""
-1_Plantel_ficha.py — Estrella FC · Ficha de jugador consolidada
-==================================================================
-Antes: grid de cromos con fotos de todo el plantel + expander por jugador.
-Ahora: selector único de jugador (más liviano, no carga fotos de todos)
-que al elegir despliega TODA la info junta, sin expanders anidados:
-
-  · Ficha básica (foto, posición, edad, estado, partidos, minutos)
-  · Métricas clave + radar de rendimiento      (eventos: events_clean.csv)
-  · Alertas (amarillas, sanciones, lesiones)    (data/sanciones_lesiones.csv)
-  · Rendimiento físico (últimos tests)          (data/distancia_fisica.csv,
-                                                  data/saltos_fisico.csv,
-                                                  data/velocidad_fisica.csv)
-  · Mapa de cancha (calor + pases)              (events_clean.csv, mplsoccer)
-  · Videos del jugador                          (data/videos_jugadores.csv)
-  · Historial de tests físicos + detalle por partido
-
-La "Vista colectiva" (stats de equipo) se mantiene igual que antes,
-activable con el botón "📊 Stats" — no depende del selector de jugador.
-
-NOTA: cada página del proyecto mantiene sus propias funciones de carga
-(no hay un módulo de datos compartido), así que varias funciones de acá
-son copias deliberadas de 3_Rendimiento_fisico.py, 5_Alertas.py,
-8_Player_review.py y 2_Mapa_cancha.py, adaptadas a una sola ficha.
-"""
-
 import os
 import base64
 import mimetypes
@@ -35,6 +9,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from mplsoccer import Pitch
 import matplotlib.pyplot as plt
+
+from components.layout import inject_css, render_sidebar, render_mobile_nav, filtro_dt, eventos_por_dt
 
 # ── Configuración de página ───────────────────────────────────────────────────
 st.set_page_config(
