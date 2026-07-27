@@ -152,6 +152,43 @@ def render_mobile_nav():
 </div>
 """, unsafe_allow_html=True)
 
+def filtro_dt(fixture, key="filtro_dt_global"):
+    """
+    Selector de ciclo de DT reusable. Si fixture no tiene columna 'dt'
+    (CSV viejo sin editar), no rompe nada: devuelve el fixture completo
+    sin filtrar y no muestra el selector.
+
+    Devuelve: (fixture_filtrado, dt_seleccionado_o_None)
+    """
+    if fixture.empty or "dt" not in fixture.columns:
+        return fixture, None
+
+    dts_disponibles = fixture["dt"].dropna().astype(str).str.strip().unique().tolist()
+    if len(dts_disponibles) <= 1:
+        return fixture, (dts_disponibles[0] if dts_disponibles else None)
+
+    opciones = ["Todo el torneo"] + dts_disponibles
+    sel = st.selectbox("Ciclo", opciones, key=key)
+
+    if sel == "Todo el torneo":
+        return fixture, None
+    return fixture[fixture["dt"].astype(str).str.strip() == sel], sel
+
+
+def eventos_por_dt(eventos, fixture, dt_nombre=None):
+    """
+    Filtra events_clean.csv según el DT a cargo en cada fecha, cruzando
+    contra fixture.csv por número de fecha. Si dt_nombre es None, no filtra.
+    """
+    if eventos.empty or fixture.empty or "dt" not in fixture.columns:
+        return eventos
+    mapa_dt = fixture.set_index("fecha")["dt"].to_dict()
+    ev = eventos.copy()
+    ev["dt"] = ev["fecha"].map(mapa_dt)
+    if dt_nombre:
+        ev = ev[ev["dt"] == dt_nombre]
+    return ev
+
 # ==========================
 # SIDEBAR
 # ==========================
