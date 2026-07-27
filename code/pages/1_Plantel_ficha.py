@@ -1,3 +1,11 @@
+"""
+1_Plantel_ficha.py — Estrella FC · Ficha de jugador consolidada
+==================================================================
+(sin cambios respecto a la versión anterior salvo la Vista Colectiva,
+que ahora soporta filtrar por ciclo de DT vía components.layout.filtro_dt
+/ eventos_por_dt — ver sección VISTA COLECTIVA al final del archivo)
+"""
+
 import os
 import base64
 import mimetypes
@@ -10,8 +18,6 @@ import plotly.graph_objects as go
 from mplsoccer import Pitch
 import matplotlib.pyplot as plt
 
-from components.layout import inject_css, render_sidebar, render_mobile_nav, filtro_dt, eventos_por_dt
-
 # ── Configuración de página ───────────────────────────────────────────────────
 st.set_page_config(
     page_title="Plantel · Estrella FC",
@@ -19,7 +25,10 @@ st.set_page_config(
     layout="wide",
 )
 
-from components.layout import inject_css, render_sidebar, render_mobile_nav
+from components.layout import (
+    inject_css, render_sidebar, render_mobile_nav,
+    filtro_dt, eventos_por_dt,
+)
 inject_css()
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 render_sidebar(BASE)
@@ -322,11 +331,6 @@ def umbral_suspension(sanciones_cumplidas):
 
 
 def resumen_alertas_jugador(nombre: str, alertas: pd.DataFrame) -> dict:
-    """
-    Versión "para un solo jugador" de la lógica de 5_Alertas.py: estado actual,
-    amarillas en el ciclo vigente, cuántas faltan para la próxima suspensión,
-    y motivo/fecha de regreso si está sancionado o lesionado.
-    """
     icono, estado_txt, badge_cls = estado_jugador(nombre, alertas)
     resultado = {
         "icono": icono, "estado_txt": estado_txt, "badge_cls": badge_cls,
@@ -475,9 +479,6 @@ def foto_b64(foto_path: str):
 # Helpers — mapa de cancha (adaptado de 2_Mapa_cancha.py, filtrado a un jugador)
 # ══════════════════════════════════════════════════════════════════════════════
 def clasificar_pases(df: pd.DataFrame) -> pd.DataFrame:
-    """Copiado de 2_Mapa_cancha.py: marca cada pase como exitoso o no según
-    si el próximo evento cercano (misma zona, hasta 5 eventos después) continúa
-    la jugada o la corta."""
     df = df.copy()
     df["pase_ok"] = False
     eventos_continuidad = {"pase", "centro", "conduccion", "corner",
@@ -531,8 +532,6 @@ def mapa_calor_jugador(nombre: str, eventos: pd.DataFrame):
 
 
 def mapa_pases_jugador(nombre: str, eventos: pd.DataFrame):
-    """Flechas de pases del jugador (promediadas por zona), verde = exitoso,
-    rojo = no continuó la jugada — mismo criterio que 2_Mapa_cancha.py."""
     eventos_clasificados = clasificar_pases(eventos)
     j = eventos_clasificados[
         (eventos_clasificados["Player"].str.lower() == nombre.lower())
@@ -574,7 +573,6 @@ def mapa_pases_jugador(nombre: str, eventos: pd.DataFrame):
 # Helpers — resumen de físico (última fila por dataset)
 # ══════════════════════════════════════════════════════════════════════════════
 def ultimo_y_delta(df_jugador: pd.DataFrame, col: str):
-    """Devuelve (último valor, fecha, delta vs el registro anterior o None)."""
     if df_jugador.empty:
         return None, None, None
     df_ord = df_jugador.sort_values("fecha")
@@ -626,7 +624,7 @@ st.markdown("<div style='height:1px;background:#1F2937;margin:4px 0 16px 0'></di
             unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# KPIs rápidos del plantel (siempre visibles)
+# KPIs rápidos del plantel (siempre visibles — acumulado histórico, sin filtro DT)
 # ══════════════════════════════════════════════════════════════════════════════
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("Total", len(jugadores))
@@ -638,7 +636,7 @@ m4.metric("Med. + Del.", len(jugadores[jugadores["posicion"].str.lower().isin(
 st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SELECTOR ÚNICO DE JUGADOR (reemplaza el grid de cromos)
+# SELECTOR ÚNICO DE JUGADOR
 # ══════════════════════════════════════════════════════════════════════════════
 jugadores_ordenados = jugadores.sort_values("nombre")
 opciones = ["— Elegí un jugador —"] + [
@@ -654,13 +652,16 @@ else:
     posicion = row["posicion"]
     color = COLOR_POS.get(posicion, "#9CA3AF")
 
+    # NOTA: la ficha individual siempre usa el histórico completo del jugador
+    # (todos los DT), porque su rendimiento acumulado importa independiente
+    # de quién dirigía en cada fecha. El filtro por ciclo de DT es solo
+    # para la Vista Colectiva (stats de equipo), más abajo.
     _stats = stats_jugador(nombre, eventos)
     _alerta = resumen_alertas_jugador(nombre, alertas)
     _metr = METRICAS_POS.get(posicion, ["pase", "recuperacion", "remate"])
     foto_path = os.path.join(FOTOS_DIR, str(row.get("fotos", "")))
     src = foto_b64(foto_path)
 
-    # ── Ficha básica: foto + datos principales ──────────────────────────────
     col_foto, col_ficha = st.columns([1, 4])
     with col_foto:
         if src:
@@ -704,14 +705,12 @@ else:
         for k, m in enumerate(_metr):
             mc[k].metric(LABEL_METRICAS.get(m, m), _stats.get(m, 0))
 
-    # ── Radar de rendimiento ─────────────────────────────────────────────────
     if not eventos.empty:
         st.markdown("<div class='seccion-titulo'>📐 Perfil de rendimiento</div>",
                     unsafe_allow_html=True)
         fig_r = radar_jugador(nombre, posicion, eventos, color)
         st.plotly_chart(fig_r, width='stretch', key=f"radar_{nombre}")
 
-    # ── Alertas ───────────────────────────────────────────────────────────────
     st.markdown("<div class='seccion-titulo'>🚨 Alertas</div>", unsafe_allow_html=True)
     ac1, ac2, ac3 = st.columns(3)
     ac1.markdown(f"""
@@ -736,7 +735,6 @@ else:
             <span class='badge {_alerta["badge_cls"]}'>{_alerta["icono"]} {_alerta["estado_txt"]}</span></div>
         """, unsafe_allow_html=True)
 
-    # ── Rendimiento físico ────────────────────────────────────────────────────
     st.markdown("<div class='seccion-titulo'>🏃 Rendimiento físico — últimos tests</div>",
                 unsafe_allow_html=True)
     fc1, fc2, fc3 = st.columns(3)
@@ -788,7 +786,6 @@ else:
             color_ev = EVAL_COLORS_VELOC.get(ev, "#9CA3AF")
             delta_html = ""
             if delta is not None:
-                # Para tiempos, bajar es mejora → invertimos el color de la flecha
                 cls = "mini-delta-down" if delta < 0 else "mini-delta-up"
                 signo = "▼" if delta < 0 else "▲"
                 delta_html = f"<span class='{cls}'> {signo} {abs(delta):.2f}s</span>"
@@ -798,7 +795,6 @@ else:
                 <div class='mini-sub' style='color:{color_ev}'>{ev} · {nombre_fecha_test(fecha_u)}</div></div>
             """, unsafe_allow_html=True)
 
-    # ── Historial de tests físicos (reemplaza la sección de Observaciones) ────
     st.markdown("<div class='seccion-titulo'>📈 Historial de tests físicos</div>",
                 unsafe_allow_html=True)
     hist_tabs = st.tabs(["Salto (CMJ)", "Velocidad (Sprint)", "Distancia (GPS)"])
@@ -847,7 +843,6 @@ else:
             )
             st.dataframe(tabla_dist, hide_index=True, width='stretch')
 
-    # ── Mapa de cancha ────────────────────────────────────────────────────────
     if not eventos.empty:
         st.markdown("<div class='seccion-titulo'>🗺️ Mapa de cancha (temporada)</div>",
                     unsafe_allow_html=True)
@@ -869,7 +864,6 @@ else:
             else:
                 st.info("Sin pases con coordenadas para este jugador.")
 
-    # ── Videos ────────────────────────────────────────────────────────────────
     st.markdown("<div class='seccion-titulo'>🎬 Videos</div>", unsafe_allow_html=True)
     videos_jug = videos_df[videos_df["jugador"].str.lower() == nombre.lower()]
     if videos_jug.empty:
@@ -898,7 +892,6 @@ else:
                     f"https://www.youtube.com/embed/{vrow['youtube_id']}", height=360,
                 )
 
-    # ── Detalle por partido ────────────────────────────────────────────────────
     if not eventos.empty:
         j_ev = eventos[eventos["Player"].str.lower() == nombre.lower()]
         if not j_ev.empty:
@@ -914,7 +907,7 @@ else:
             st.dataframe(pd.DataFrame(rows_t), hide_index=True, width='stretch')
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VISTA COLECTIVA (sin cambios respecto a la versión anterior)
+# VISTA COLECTIVA — ahora con filtro opcional por ciclo de DT
 # ══════════════════════════════════════════════════════════════════════════════
 if ver_col:
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
@@ -924,16 +917,25 @@ if ver_col:
     </div>
     """, unsafe_allow_html=True)
 
-    if fixture.empty or eventos.empty:
-        st.info("Datos de fixture o eventos aún no disponibles.")
+    # ── Selector de ciclo de DT (solo aparece si hay ≥2 DT cargados en fixture.csv) ──
+    fixture_vc, dt_activo = filtro_dt(fixture, key="dt_plantel")
+    eventos_vc = eventos_por_dt(eventos, fixture, dt_activo)
+
+    if dt_activo:
+        st.markdown(f"<span class='badge-dt'>Ciclo: {dt_activo}</span>",
+                    unsafe_allow_html=True)
+        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+    if fixture_vc.empty or eventos_vc.empty:
+        st.info("Datos de fixture o eventos aún no disponibles para este ciclo.")
     else:
-        gf = fixture["goles_favor"].sum() if "goles_favor" in fixture.columns else "—"
-        gc = fixture["goles_contra"].sum() if "goles_contra" in fixture.columns else "—"
-        pj = len(fixture)
-        wins = len(fixture[fixture["goles_favor"] > fixture["goles_contra"]]) \
-            if "goles_favor" in fixture.columns else 0
-        draws = len(fixture[fixture["goles_favor"] == fixture["goles_contra"]]) \
-            if "goles_favor" in fixture.columns else 0
+        gf = fixture_vc["goles_favor"].sum() if "goles_favor" in fixture_vc.columns else "—"
+        gc = fixture_vc["goles_contra"].sum() if "goles_contra" in fixture_vc.columns else "—"
+        pj = len(fixture_vc)
+        wins = len(fixture_vc[fixture_vc["goles_favor"] > fixture_vc["goles_contra"]]) \
+            if "goles_favor" in fixture_vc.columns else 0
+        draws = len(fixture_vc[fixture_vc["goles_favor"] == fixture_vc["goles_contra"]]) \
+            if "goles_favor" in fixture_vc.columns else 0
         loses = pj - wins - draws
 
         k1, k2, k3, k4, k5, k6 = st.columns(6)
@@ -951,8 +953,8 @@ if ver_col:
 
         st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
-        if "Event" in eventos.columns:
-            goles_ev = eventos[eventos["Event"].isin(["gol", "gol_contra"])]
+        if "Event" in eventos_vc.columns:
+            goles_ev = eventos_vc[eventos_vc["Event"].isin(["gol", "gol_contra"])]
             tramos = [0, 15, 30, 45, 60, 75, 90, 120]
             labels_t = ["1-15", "16-30", "31-45", "46-60", "61-75", "76-90", "90+"]
 
@@ -985,12 +987,12 @@ if ver_col:
                     )
                     st.plotly_chart(fig_g, width='stretch', key=f"bar_{ev_name}")
 
-        if "condicion" in fixture.columns and "goles_favor" in fixture.columns:
+        if "condicion" in fixture_vc.columns and "goles_favor" in fixture_vc.columns:
             st.markdown("<div class='seccion-titulo' style='margin-top:8px'>Efectividad Local vs Visitante</div>",
                         unsafe_allow_html=True)
             ev_col_cols = st.columns(2)
             for col_ef, cond in zip(ev_col_cols, ["Local", "Visitante"]):
-                sub = fixture[fixture["condicion"] == cond]
+                sub = fixture_vc[fixture_vc["condicion"] == cond]
                 if sub.empty:
                     col_ef.caption(f"Sin partidos de {cond}.")
                     continue
