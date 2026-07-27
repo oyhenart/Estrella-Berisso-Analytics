@@ -1,5 +1,5 @@
 # ==========================================
-# Archivo: components/layout.py (con soporte mobile + st_yled)
+# Archivo: components/layout.py (con soporte mobile + st_yled + filtro DT)
 # ==========================================
 import streamlit as st
 import os
@@ -17,25 +17,20 @@ if not hasattr(st, "bokeh_chart"):
 if USAR_ST_YLED:
     import st_yled  # ← librería de theming, no usa iframes/React (liviana)
 
+
 # ==========================
 # THEME (st_yled) — se llama UNA sola vez por render, es solo CSS/config
 # ==========================
 def init_theme():
-    """
-    Inicializa st_yled. Busca .streamlit/st-styled.css si existe (opcional).
-    No agrega componentes React ni iframes -> no impacta performance en mobile.
-    Si más adelante querés un theme predefinido, podés probar:
-        st_yled.init(theme="bauhaus")
-    Por ahora lo dejamos neutro para no pisar tus colores actuales (#E23E3E, etc).
-    """
     if USAR_ST_YLED:
         st_yled.init()
+
 
 # ==========================
 # CSS (tu sistema actual, intacto)
 # ==========================
 def inject_css():
-    init_theme()  # ← se ejecuta antes del CSS propio, no interfiere con él
+    init_theme()
 
     st.markdown("""
 <style>
@@ -44,14 +39,9 @@ footer { visibility: hidden; }
 header { visibility: hidden; }
 [data-testid="stSidebarNav"] { display: none; }
 
-/* ── SIDEBAR SIEMPRE VISIBLE (no replegable) ── */
-/* Ocultamos el botón que colapsa/expande el sidebar... */
 [data-testid="collapsedControl"] {
     display: none !important;
 }
-/* ...y forzamos que el sidebar quede siempre expandido, incluso si
-   Streamlit le mete aria-expanded="false" (que es como lo "repliega"
-   por dentro con un transform). */
 section[data-testid="stSidebar"] {
     transform: none !important;
     visibility: visible !important;
@@ -76,10 +66,8 @@ section[data-testid="stSidebar"][aria-expanded="false"] {
     max-width: 1450px;
 }
 
-/* ── MOBILE ── */
 @media (max-width: 768px) {
     .block-container {
-        /* espacio para la barra fija de arriba (56px) + aire */
         padding-top: 4.75rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
@@ -97,11 +85,20 @@ section[data-testid="stSidebar"] {
 html, body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+
+/* Badge de ciclo DT (usado por filtro_dt) */
+.badge-dt {
+    display:inline-block; background:#1F2937; color:#9CA3AF;
+    border-radius:99px; padding:3px 10px; font-size:.68em;
+    font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+    border:1px solid #374151;
+}
 </style>
 """, unsafe_allow_html=True)
 
+
 # ==========================
-# MOBILE NAV (barra superior, ya no inferior)
+# MOBILE NAV
 # ==========================
 def render_mobile_nav():
     st.markdown("""
@@ -115,7 +112,7 @@ def render_mobile_nav():
         z-index: 9998;
         background: #0d131f;
         border-bottom: 1px solid rgba(255,255,255,0.08);
-        padding: 8px 54px 8px 10px; /* deja hueco a la derecha para el hamburger */
+        padding: 8px 54px 8px 10px;
         display: flex;
         justify-content: space-around;
         align-items: center;
@@ -152,33 +149,60 @@ def render_mobile_nav():
 </div>
 """, unsafe_allow_html=True)
 
-def filtro_dt(fixture, key="filtro_dt_global"):
+
+# ==========================
+# FILTRO DE CICLO DE DT (nuevo)
+# ==========================
+def filtro_dt(fixture, key="filtro_dt_global", label="Ciclo"):
     """
-    Selector de ciclo de DT reusable. Si fixture no tiene columna 'dt'
-    (CSV viejo sin editar), no rompe nada: devuelve el fixture completo
-    sin filtrar y no muestra el selector.
+    Selector de ciclo de DT reusable para cualquier page.
+
+    - Si `fixture` está vacío o no tiene columna 'dt' (CSV viejo, o
+      proyecto sin editar todavía), no hace nada: devuelve el fixture
+      completo sin filtrar y sin mostrar selector. Así es 100% opcional
+      y no rompe páginas que todavía no necesitan esto.
+    - Las filas con 'dt' vacío (partidos pendientes sin DT asignado
+      todavía) NO entran en ningún ciclo específico, pero SÍ aparecen
+      cuando se elige "Todo el torneo".
 
     Devuelve: (fixture_filtrado, dt_seleccionado_o_None)
     """
     if fixture.empty or "dt" not in fixture.columns:
         return fixture, None
 
-    dts_disponibles = fixture["dt"].dropna().astype(str).str.strip().unique().tolist()
-    if len(dts_disponibles) <= 1:
-        return fixture, (dts_disponibles[0] if dts_disponibles else None)
+    dts_disponibles = _dts_unicos(fixture)
+
+    if len(dts_disponibles) == 0:
+        return fixture, None
+    if len(dts_disponibles) == 1:
+        # Solo un DT cargado todavía → no hace falta mostrar selector
+        return fixture, dts_disponibles[0]
 
     opciones = ["Todo el torneo"] + dts_disponibles
-    sel = st.selectbox("Ciclo", opciones, key=key)
+    sel = st.selectbox(label, opciones, key=key)
 
     if sel == "Todo el torneo":
         return fixture, None
     return fixture[fixture["dt"].astype(str).str.strip() == sel], sel
 
 
+def _dts_unicos(fixture):
+    """Lista de DTs cargados en fixture['dt'], ignorando vacíos/NaN."""
+    serie = fixture["dt"].dropna().astype(str).str.strip()
+    serie = serie[serie != ""]
+    return serie.unique().tolist()
+
+
 def eventos_por_dt(eventos, fixture, dt_nombre=None):
     """
-    Filtra events_clean.csv según el DT a cargo en cada fecha, cruzando
-    contra fixture.csv por número de fecha. Si dt_nombre es None, no filtra.
+    Filtra events_clean.csv según el DT a cargo en cada fecha (join
+    contra fixture.csv por número de fecha). Si dt_nombre es None,
+    devuelve eventos sin filtrar (todo el torneo).
+
+    Las fechas de fixture sin 'dt' asignado (partidos pendientes que
+    todavía no tienen DT confirmado) simplemente no matchean con
+    ningún dt_nombre específico, así que quedan afuera al filtrar por
+    un ciclo puntual — lo cual es el comportamiento esperado.
     """
     if eventos.empty or fixture.empty or "dt" not in fixture.columns:
         return eventos
@@ -188,6 +212,7 @@ def eventos_por_dt(eventos, fixture, dt_nombre=None):
     if dt_nombre:
         ev = ev[ev["dt"] == dt_nombre]
     return ev
+
 
 # ==========================
 # SIDEBAR
@@ -207,6 +232,7 @@ def buscar_escudo_local(base_path):
         if candidato.lower() in archivos_lower:
             return os.path.join(escudos_dir, archivos_lower[candidato.lower()])
     return None
+
 
 def render_sidebar(base_path):
     escudo = buscar_escudo_local(base_path)
@@ -237,6 +263,7 @@ def render_sidebar(base_path):
     for ruta_abs, nombre in paginas:
         if os.path.exists(ruta_abs):
             st.sidebar.page_link(ruta_abs, label=nombre)
+
 
 # ==========================
 # HEADER
