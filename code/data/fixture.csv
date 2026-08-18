@@ -9,7 +9,7 @@ fecha,condicion,rival,goles_favor,goles_contra,estado,dt
 8,Visitante,Deportivo Metalúrgico,0,1,Jugado,zein
 9,Visitante,Atlético Pilar,2,1,Jugado,zein
 10,Local,CUDP,5,0,Jugado,zein
-11,Visitante,Defensores de Glew,,,Pendiente
+11,Visitante,Defensores de Glew,0,4,Jugado,zein
 12,Local,Hacoaj,,,Pendiente
 13,Visitante,Juventud de Bernal,,,Pendiente
 14,Local,Social Atlético TV,,,Pendiente
