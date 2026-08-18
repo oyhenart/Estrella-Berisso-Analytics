@@ -26,43 +26,9 @@ def cargar_alertas():
     df = pd.read_csv(os.path.join(BASE, "data", "sanciones_lesiones.csv"))
     if not df.empty and "fecha_regreso" in df.columns:
         df["fecha_regreso"] = pd.to_datetime(df["fecha_regreso"], dayfirst=True, errors="coerce")
-    if not df.empty and "fecha_cumplimiento" in df.columns:
-        df["fecha_cumplimiento"] = pd.to_datetime(df["fecha_cumplimiento"], dayfirst=True, errors="coerce")
-    if not df.empty and "fecha" in df.columns:
-        df["fecha"] = pd.to_datetime(df["fecha"], dayfirst=True, errors="coerce")
+    if not df.empty and "fecha_partido" in df.columns:
+        df["fecha_partido"] = pd.to_datetime(df["fecha_partido"], dayfirst=True, errors="coerce")
     return df
-
-def contar_amarillas_ciclo(nombre, df_amarillas, df_sanciones):
-    """Cuenta amarillas desde la última sanción cumplida."""
-    
-    # Obtener sanciones cumplidas del jugador
-    sanciones_jugador = df_sanciones[df_sanciones["nombre"] == nombre].copy()
-    
-    if sanciones_jugador.empty:
-        # Sin sanciones: contar todas las amarillas
-        amarillas_jugador = df_amarillas[df_amarillas["nombre"] == nombre]
-        return len(amarillas_jugador)
-    
-    # Filtrar sanciones con fecha de cumplimiento
-    sanciones_cumplidas = sanciones_jugador[sanciones_jugador["fecha_cumplimiento"].notna()]
-    
-    if sanciones_cumplidas.empty:
-        # No hay sanciones cumplidas aún: contar todas las amarillas
-        amarillas_jugador = df_amarillas[df_amarillas["nombre"] == nombre]
-        return len(amarillas_jugador)
-    
-    # Obtener la fecha de la última sanción cumplida
-    ultima_sancion = sanciones_cumplidas["fecha_cumplimiento"].max()
-    
-    # Contar solo amarillas DESPUÉS de esa fecha
-    amarillas_jugador = df_amarillas[df_amarillas["nombre"] == nombre].copy()
-    
-    # Si no tiene columna fecha, asignar la fecha como NaT (se contarán todas)
-    if "fecha" not in amarillas_jugador.columns:
-        return len(amarillas_jugador)
-    
-    amarillas_despues = amarillas_jugador[amarillas_jugador["fecha"] > ultima_sancion]
-    return len(amarillas_despues)
 
 def umbral_suspension(sanciones_cumplidas):
     """Devuelve cuántas amarillas se necesitan para la próxima suspensión."""
@@ -85,7 +51,7 @@ hoy = pd.Timestamp(date.today())
 
 # --- Separar por tipo ---
 amarillas = df[df["tipo"].str.lower() == "amarilla"].copy()
-sanciones = df[df["tipo"].str.lower().isin(["sanción", "sancion", "roja directa"])].copy()
+sanciones = df[df["tipo"].str.lower().isin(["sanción", "sancion", "roja directa", "roja"])].copy()
 lesiones = df[df["tipo"].str.lower().isin(["lesión", "lesion"])].copy()
 
 # --- Métricas globales ---
@@ -111,16 +77,16 @@ if not amarillas.empty:
     for jugador in amarillas["nombre"].unique():
         total = len(amarillas[amarillas["nombre"] == jugador])
         
-        # Contar sanciones cumplidas del jugador
+        # Contar sanciones (rojas) cumplidas del jugador
         sanciones_jugador = sanciones[sanciones["nombre"] == jugador].copy() if not sanciones.empty else pd.DataFrame()
-        sanciones_cumplidas = len(sanciones_jugador[sanciones_jugador["fecha_cumplimiento"].notna()]) if not sanciones_jugador.empty else 0
+        sanciones_cumplidas = len(sanciones_jugador)
         
         # Obtener umbral según sanciones cumplidas
         umbral = umbral_suspension(sanciones_cumplidas)
         
-        # Contar amarillas en el ciclo actual (después de última sanción cumplida)
-        amarillas_ciclo = contar_amarillas_ciclo(jugador, amarillas, sanciones) if not sanciones.empty else total
-        
+        # En el ciclo actual: amarillas totales - (amarillas que generaron sanciones anteriores)
+        # Como no tenemos fecha_cumplimiento, usamos el total
+        amarillas_ciclo = total
         faltan = umbral - amarillas_ciclo
 
         if faltan <= 0:
