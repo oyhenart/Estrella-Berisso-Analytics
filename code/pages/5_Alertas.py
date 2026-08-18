@@ -145,18 +145,8 @@ if not amarillas.empty:
         use_container_width=True,
         hide_index=True,
         column_config={
-            "Amarillas totales":
-                st.column_config.ProgressColumn(
-                    "Amarillas totales",
-                    min_value=0,
-                    max_value=10
-                ),
-            "Amarillas en ciclo":
-                st.column_config.ProgressColumn(
-                    "Amarillas en ciclo",
-                    min_value=0,
-                    max_value=5
-                )
+            "Amarillas totales": st.column_config.NumberColumn("Amarillas totales"),
+            "Amarillas en ciclo": st.column_config.NumberColumn("Amarillas en ciclo")
         }
     )
     st.divider()
